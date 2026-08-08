@@ -6,6 +6,7 @@ import { FolderOpenButton, type FolderFile } from './FolderOpenButton';
 import { flattenElements, parseProcess, parseProcessText, ProcessParseError } from '../model/parseProcess';
 import { ProcessRegistry, extractProcessReference } from '../model/processRegistry';
 import { hasHiddenChildren } from '../icons/activityBadge';
+import { useSidebarWidth } from './useSidebarWidth';
 import type { ProcessDocument, ProcessElement } from '../model/schema-types';
 import demoDoc from '../fixtures/DocumentExample.p.json';
 
@@ -25,6 +26,7 @@ export function SingleView() {
   const [message, setMessage] = useState<string>();
   const [selectedId, setSelectedId] = useState<string>();
   const registryRef = useRef(new ProcessRegistry());
+  const { width: sidebarWidth, isDragging, onHandlePointerDown } = useSidebarWidth();
 
   const current = frames[frames.length - 1];
 
@@ -126,7 +128,14 @@ export function SingleView() {
         <div className="view__canvas">
           {current && <ProcessCanvas key={frames.length} document={current.doc} onSelectElement={setSelectedId} />}
         </div>
-        <div className="view__sidebar">
+        <div
+          className={`sidebar-resize-handle${isDragging ? ' sidebar-resize-handle--active' : ''}`}
+          onPointerDown={onHandlePointerDown}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize detail sidebar"
+        />
+        <div className="view__sidebar" style={{ width: sidebarWidth }}>
           <DetailPanel element={selectedElement} />
         </div>
       </div>

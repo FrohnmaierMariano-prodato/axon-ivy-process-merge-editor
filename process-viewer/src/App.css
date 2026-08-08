@@ -175,11 +175,30 @@
 }
 
 .view__sidebar {
-  width: 320px;
   flex-shrink: 0;
   border-left: 1px solid #e2e8f0;
   background: #ffffff;
   overflow-y: auto;
+}
+
+.sidebar-resize-handle {
+  flex-shrink: 0;
+  width: 5px;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+  touch-action: none;
+}
+
+.sidebar-resize-handle::after {
+  content: '';
+  position: absolute;
+  inset: 0 -2px;
+}
+
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle--active {
+  background: #93c5fd;
 }
 
 .detail-panel {

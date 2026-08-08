@@ -4,6 +4,7 @@ import { DetailPanel } from './DetailPanel';
 import { FileOpenButton } from './FileOpenButton';
 import { flattenElements, parseProcess, parseProcessText, ProcessParseError } from '../model/parseProcess';
 import { diffProcess } from '../diff/diffProcess';
+import { useSidebarWidth } from './useSidebarWidth';
 import type { ProcessDocument } from '../model/schema-types';
 import leftDemoDoc from '../fixtures/DocumentExample.p.json';
 import rightDemoDoc from '../fixtures/DocumentExample.modified.p.json';
@@ -17,6 +18,7 @@ export function DiffView() {
   const [rightName, setRightName] = useState('DocumentExample.modified.p.json (bundled demo)');
   const [errors, setErrors] = useState<Partial<Record<Side, string>>>({});
   const [selectedId, setSelectedId] = useState<string>();
+  const { width: sidebarWidth, isDragging, onHandlePointerDown } = useSidebarWidth();
 
   const diff = useMemo(() => (left && right ? diffProcess(left, right) : undefined), [left, right]);
 
@@ -67,7 +69,14 @@ export function DiffView() {
             {right && <ProcessCanvas document={right} diff={diff} onSelectElement={setSelectedId} />}
           </div>
         </div>
-        <div className="view__sidebar">
+        <div
+          className={`sidebar-resize-handle${isDragging ? ' sidebar-resize-handle--active' : ''}`}
+          onPointerDown={onHandlePointerDown}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize detail sidebar"
+        />
+        <div className="view__sidebar" style={{ width: sidebarWidth }}>
           <DetailPanel element={selectedElement} diffEntry={selectedDiffEntry} />
         </div>
       </div>
