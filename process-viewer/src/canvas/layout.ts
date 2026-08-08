@@ -64,6 +64,24 @@ function pickSide(from: VisualPoint, to: VisualPoint): Side {
 }
 
 /**
+ * Point where the straight line from `rect`'s center toward `target` crosses `rect`'s boundary -
+ * used for connectors that don't specify any `via` points, which Designer draws as a single plain
+ * straight line (diagonal if source/target aren't aligned), not an orthogonal bend.
+ */
+function intersectRectFromCenter(rect: Rect, target: VisualPoint): VisualPoint {
+  const center = centerOf(rect);
+  const dx = target.x - center.x;
+  const dy = target.y - center.y;
+  if (dx === 0 && dy === 0) return center;
+  const halfWidth = rect.width / 2;
+  const halfHeight = rect.height / 2;
+  const scaleX = dx !== 0 ? halfWidth / Math.abs(dx) : Infinity;
+  const scaleY = dy !== 0 ? halfHeight / Math.abs(dy) : Infinity;
+  const scale = Math.min(scaleX, scaleY);
+  return { x: center.x + dx * scale, y: center.y + dy * scale };
+}
+
+/**
  * Expands a raw point sequence (source anchor, via points, target anchor) into a strictly
  * orthogonal (Manhattan-style) polyline, inserting a right-angle bend for any consecutive pair
  * that isn't already axis-aligned - this matches how Axon Ivy Designer always routes connectors
@@ -144,17 +162,25 @@ function buildLaneNodes(lanes: VisualLane[] | undefined, maxX: number): Node<Lan
 /**
  * Converts a parsed process document into React Flow nodes/edges.
  *
+ * Coordinates: Axon Ivy Designer stores each element's `visual.at` as the *center* of its
+ * bounding box (not the top-left corner) - this is what lets elements of very different sizes
+ * (e.g. a 32x32 start circle and a 100x64 activity box) share the exact same `at.y` and still end
+ * up perfectly aligned on the same visual row. We convert to a top-left `position` (what React
+ * Flow expects) by subtracting half the element's size.
+ *
  * Nesting: elements inside a container's `elements[]` become React Flow child
  * nodes (`parentId`), positioned relative to the container's origin - this
  * matches how Axon Ivy stores embedded-subprocess coordinates. `boundaries[]`
- * (e.g. an ErrorBoundaryEvent on an activity) are pinned near the bottom-right
- * corner of their owning node rather than trusting `visual.at`, since boundary
- * events are visually "attached to the border" rather than freely placed.
+ * (e.g. an ErrorBoundaryEvent on an activity) use their own real `visual.at`
+ * too (same center convention, in the same frame as their owning activity),
+ * only falling back to a synthetic bottom-right pin if that's ever missing.
  *
- * Connector routing is computed in two phases: phase 1 walks the element tree
- * collecting each node's local rect/parent, phase 2 (once every rect is known)
- * resolves absolute rects and builds a fully orthogonal path per connector -
- * see {@link makeOrthogonal}.
+ * Connector routing is computed in two phases: phase 1 walks the element tree collecting each
+ * node's local rect/parent, phase 2 (once every rect is known) resolves absolute rects and builds
+ * each connector's path - a plain straight line (possibly diagonal) when it has no `via` points,
+ * matching Designer's default rendering, or an orthogonal (right-angle) path through them when it
+ * does, matching Designer's rendering once a waypoint has been dragged onto the connector - see
+ * {@link intersectRectFromCenter} and {@link makeOrthogonal}.
  */
 export function layoutProcess(doc: ProcessDocument, diff?: ProcessDiffResult): LayoutResult {
   const nodes: Node<ElementNodeData>[] = [];
@@ -168,7 +194,8 @@ export function layoutProcess(doc: ProcessDocument, diff?: ProcessDiffResult): L
     for (const element of elements) {
       const category = classifyElementType(element.type);
       const size = element.visual?.size ?? DEFAULT_SIZE[category];
-      const position = element.visual?.at ?? { x: 0, y: 0 };
+      const center = element.visual?.at ?? { x: 0, y: 0 };
+      const position = { x: center.x - size.width / 2, y: center.y - size.height / 2 };
       const status = diff?.elements.get(element.id)?.status ?? 'unchanged';
 
       nodes.push({
@@ -199,7 +226,14 @@ export function layoutProcess(doc: ProcessDocument, diff?: ProcessDiffResult): L
           const boundaryCategory = classifyElementType(boundary.type);
           const boundarySize = boundary.visual?.size ?? DEFAULT_SIZE[boundaryCategory];
           const boundaryStatus = diff?.elements.get(boundary.id)?.status ?? 'unchanged';
-          const boundaryPosition = { x: size.width - boundarySize.width / 2 - i * (boundarySize.width + 4), y: size.height - boundarySize.height / 2 };
+          // A boundary event's `visual.at` is authored in the same frame as its owning activity's
+          // own `at` (i.e. the activity's parent's frame), not relative to the activity itself -
+          // so we convert it to top-left and then subtract the activity's own top-left (`position`,
+          // already in that same frame) to get the local position React Flow needs for a child node.
+          const boundaryCenter = boundary.visual?.at;
+          const boundaryPosition = boundaryCenter
+            ? { x: boundaryCenter.x - boundarySize.width / 2 - position.x, y: boundaryCenter.y - boundarySize.height / 2 - position.y }
+            : { x: size.width - boundarySize.width / 2 - i * (boundarySize.width + 4), y: size.height - boundarySize.height / 2 };
           nodes.push({
             id: boundary.id,
             type: 'processElement',
@@ -244,7 +278,54 @@ export function layoutProcess(doc: ProcessDocument, diff?: ProcessDiffResult): L
     return parentId ? absoluteRect(parentId) : { x: 0, y: 0 };
   };
 
-  const edges: Edge<ConnectorEdgeData>[] = [];
+  /**
+ * A point at the given fraction (0-1) of the total path length - used as the default label
+ * position when a connector doesn't specify a `label.segment`.
+ */
+function pointAtFraction(points: VisualPoint[], fraction: number): VisualPoint {
+  const segmentLengths = points.slice(1).map((p, i) => Math.hypot(p.x - points[i].x, p.y - points[i].y));
+  const total = segmentLengths.reduce((a, b) => a + b, 0);
+  let remaining = total * fraction;
+  for (let i = 0; i < segmentLengths.length; i++) {
+    const len = segmentLengths[i];
+    if (remaining <= len || i === segmentLengths.length - 1) {
+      const t = len === 0 ? 0 : Math.min(remaining / len, 1);
+      const a = points[i];
+      const b = points[i + 1];
+      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+    }
+    remaining -= len;
+  }
+  return points[points.length - 1];
+}
+
+/**
+ * Resolves a connector label's anchor point using Designer's `label.segment` hint (1-based index
+ * into the path's straight segments, with the fractional part being progress along that segment)
+ * when present, else the path's overall midpoint - then applies `label.offset` as a final pixel
+ * nudge, exactly as Designer does.
+ */
+function labelPoint(points: VisualPoint[], label: { segment?: number; offset?: VisualPoint } | undefined): VisualPoint {
+  let base: VisualPoint;
+  if (label?.segment !== undefined && points.length >= 2) {
+    const segmentCount = points.length - 1;
+    const index = Math.min(Math.max(Math.floor(label.segment) - 1, 0), segmentCount - 1);
+    const fraction = label.segment - Math.floor(label.segment);
+    const a = points[index];
+    const b = points[index + 1];
+    base = { x: a.x + (b.x - a.x) * fraction, y: a.y + (b.y - a.y) * fraction };
+  } else {
+    base = pointAtFraction(points, 0.5);
+  }
+  return { x: base.x + (label?.offset?.x ?? 0), y: base.y + (label?.offset?.y ?? 0) };
+}
+
+function labelText(name: string | string[] | undefined): string | undefined {
+  if (Array.isArray(name)) return name.join(' ');
+  return name;
+}
+
+const edges: Edge<ConnectorEdgeData>[] = [];
   for (const { ownerId, frameOwnerId, connectors } of pendingConnectors) {
     const sourceRect = absoluteRect(ownerId);
     const offset = frameOffset(frameOwnerId);
@@ -258,14 +339,22 @@ export function layoutProcess(doc: ProcessDocument, diff?: ProcessDiffResult): L
 
       const sourceCenter = centerOf(sourceRect);
       const targetCenter = centerOf(targetRect);
-      const firstDirectionPoint = viaAbsolute[0] ?? targetCenter;
-      const lastDirectionPoint = viaAbsolute[viaAbsolute.length - 1] ?? sourceCenter;
 
-      const sourceSide = pickSide(sourceCenter, firstDirectionPoint);
-      const targetSide = opposite(pickSide(lastDirectionPoint, targetCenter));
-
-      const rawPoints = [anchorOnRect(sourceRect, sourceSide), ...viaAbsolute, anchorOnRect(targetRect, targetSide)];
-      const points = makeOrthogonal(rawPoints, sourceSide, targetSide);
+      let points: VisualPoint[];
+      if (viaAbsolute.length === 0) {
+        // No via points authored - Designer draws one plain straight line between the shapes'
+        // boundaries (diagonal if they aren't aligned), *not* a forced right-angle bend.
+        points = [intersectRectFromCenter(sourceRect, targetCenter), intersectRectFromCenter(targetRect, sourceCenter)];
+      } else {
+        // Via points are manually-placed bends - route orthogonally through them, matching how
+        // Designer draws a connector once you've dragged a waypoint onto it.
+        const firstDirectionPoint = viaAbsolute[0];
+        const lastDirectionPoint = viaAbsolute[viaAbsolute.length - 1];
+        const sourceSide = pickSide(sourceCenter, firstDirectionPoint);
+        const targetSide = opposite(pickSide(lastDirectionPoint, targetCenter));
+        const rawPoints = [anchorOnRect(sourceRect, sourceSide), ...viaAbsolute, anchorOnRect(targetRect, targetSide)];
+        points = makeOrthogonal(rawPoints, sourceSide, targetSide);
+      }
 
       const connectorStatus = diff?.connectors.get(`${ownerId}::${connector.id}`)?.status ?? 'unchanged';
       edges.push({
@@ -273,7 +362,7 @@ export function layoutProcess(doc: ProcessDocument, diff?: ProcessDiffResult): L
         source: ownerId,
         target: connector.to,
         type: 'connector',
-        data: { points, label: connector.label?.name, status: connectorStatus }
+        data: { points, label: labelText(connector.label?.name), labelPoint: labelPoint(points, connector.label), status: connectorStatus }
       });
     }
   }

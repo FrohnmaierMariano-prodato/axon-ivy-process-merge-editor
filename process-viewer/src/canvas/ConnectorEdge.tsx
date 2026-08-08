@@ -6,6 +6,8 @@ import type { VisualPoint } from '../model/schema-types';
 export interface ConnectorEdgeData extends Record<string, unknown> {
   /** Fully orthogonal path, pre-computed in `layout.ts` (source anchor, any bends, target anchor). */
   points: VisualPoint[];
+  /** Pre-resolved label anchor point (from `label.segment`/`label.offset`, or the path midpoint). */
+  labelPoint?: VisualPoint;
   label?: string;
   status: DiffStatus;
 }
@@ -20,9 +22,8 @@ export function ConnectorEdge({ sourceX, sourceY, targetX, targetY, data, marker
   const points = data?.points && data.points.length > 0 ? data.points : [{ x: sourceX, y: sourceY }, { x: targetX, y: targetY }];
 
   const path = pathThroughPoints(points);
-  const mid = points[Math.floor(points.length / 2)];
-  const labelX = mid?.x ?? (sourceX + targetX) / 2;
-  const labelY = mid?.y ?? (sourceY + targetY) / 2;
+  const labelX = data?.labelPoint?.x ?? (sourceX + targetX) / 2;
+  const labelY = data?.labelPoint?.y ?? (sourceY + targetY) / 2;
 
   return (
     <>

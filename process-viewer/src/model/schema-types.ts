@@ -20,7 +20,8 @@ export interface VisualSize {
 }
 
 export interface VisualConnectorLabel {
-  name?: string;
+  /** May be a single line, or multiple lines (rendered stacked, like a multi-line element `name`). */
+  name?: string | string[];
   offset?: VisualPoint;
   segment?: number;
 }
