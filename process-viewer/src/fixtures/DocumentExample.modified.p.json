@@ -1,0 +1,131 @@
+{
+  "$schema" : "https://json-schema.axonivy.com/process/12.0.0/process.json",
+  "id" : "19A44F7C9FFFD445",
+  "config" : {
+    "data" : "doc.to.form.DocumentExampleData"
+  },
+  "elements" : [ {
+      "id" : "f0",
+      "type" : "RequestStart",
+      "name" : "start",
+      "config" : {
+        "signature" : "start"
+      },
+      "visual" : {
+        "at" : { "x" : 96, "y" : 64 }
+      },
+      "connect" : [
+        { "id" : "f2", "to" : "f6" }
+      ]
+    }, {
+      "id" : "f1",
+      "type" : "TaskEnd",
+      "visual" : {
+        "at" : { "x" : 744, "y" : 64 },
+        "labelOffset" : { "x" : 13, "y" : 33 }
+      }
+    }, {
+      "id" : "f3",
+      "type" : "RestClientCall",
+      "config" : {
+        "method" : "POST",
+        "target" : {
+          "clientId" : "380cbc3e-e73e-4be7-8ac5-aab8a8ebeee0",
+          "path" : "/v2/convert/file"
+        },
+        "body" : {
+          "type" : "FORM",
+          "mediaType" : "multipart/form-data",
+          "form" : {
+            "files" : [ "in.docs" ],
+            "target_type" : [ "" ],
+            "from_formats" : [ "" ],
+            "to_formats" : [ "in.output" ],
+            "image_export_mode" : [ "" ],
+            "do_ocr" : [ "" ],
+            "force_ocr" : [ "" ],
+            "ocr_engine" : [ "" ],
+            "ocr_lang" : [ "" ],
+            "pdf_backend" : [ "" ],
+            "table_mode" : [ "" ],
+            "table_cell_matching" : [ "" ],
+            "pipeline" : [ "" ],
+            "page_range" : [ "" ],
+            "document_timeout" : [ "" ],
+            "abort_on_error" : [ "" ],
+            "do_table_structure" : [ "" ],
+            "include_images" : [ "" ],
+            "images_scale" : [ "" ],
+            "md_page_break_placeholder" : [ "" ],
+            "do_code_enrichment" : [ "" ],
+            "do_formula_enrichment" : [ "" ],
+            "do_picture_classification" : [ "" ],
+            "do_picture_description" : [ "" ],
+            "picture_description_area_threshold" : [ "" ],
+            "picture_description_local" : [ "" ],
+            "picture_description_api" : [ "" ],
+            "vlm_pipeline_model" : [ "" ],
+            "vlm_pipeline_model_local" : [ "" ],
+            "vlm_pipeline_model_api" : [ "" ]
+          },
+          "entity" : {
+            "type" : "localhost.client.BodyProcessFileV1ConvertFilePost"
+          }
+        },
+        "response" : {
+          "entity" : {
+            "type" : "localhost.client.ResponseProcessFileV1ConvertFilePost",
+            "code" : "ivy.log.info(result.toString());"
+          }
+        }
+      },
+      "visual" : {
+        "at" : { "x" : 528, "y" : 64 }
+      },
+      "connect" : [
+        { "id" : "f4", "to" : "f9", "color" : "default" }
+      ]
+    }, {
+      "id" : "f6",
+      "type" : "Script",
+      "name" : "pre-process document",
+      "config" : {
+        "output" : {
+          "code" : [
+            "import localhost.client.OutputFormat;",
+            "",
+            "import ch.ivyteam.ivy.workflow.document.IDocument;",
+            "IDocument d = ivy.case.documents().getAll().getLast() as IDocument;",
+            "",
+            "out.docs.add(d.read().asJavaFile());",
+            "ivy.log.info(out.docs.getLast());",
+            "",
+            "out.output = [OutputFormat.JSON];"
+          ]
+        }
+      },
+      "visual" : {
+        "at" : { "x" : 208, "y" : 64 }
+      },
+      "connect" : [
+        { "id" : "f8", "to" : "f3", "color" : "default" }
+      ]
+    }, {
+      "id" : "f9",
+      "type" : "Script",
+      "name" : "post-process document",
+      "config" : {
+        "output" : {
+          "code" : [
+            "ivy.log.info(\"conversion done: \" + in.output);"
+          ]
+        }
+      },
+      "visual" : {
+        "at" : { "x" : 656, "y" : 64 }
+      },
+      "connect" : [
+        { "id" : "f10", "to" : "f1" }
+      ]
+    } ]
+}

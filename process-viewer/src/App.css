@@ -1,0 +1,203 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 10px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.app-header h1 {
+  font-size: 16px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.app-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.app-tabs button {
+  border: 1px solid #cbd5e1;
+  background: #f1f5f9;
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.app-tabs button.active {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+
+.app-content {
+  flex: 1;
+  min-height: 0;
+}
+
+.view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+  flex-wrap: wrap;
+}
+
+.toolbar-button {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.toolbar-button:hover {
+  background: #f1f5f9;
+}
+
+.toolbar__filename {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.toolbar__error {
+  font-size: 12px;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.view__body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.view__canvas {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.view__canvas--split {
+  display: flex;
+  gap: 1px;
+  background: #e2e8f0;
+}
+
+.split-pane {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  background: #f8fafc;
+}
+
+.split-pane__label {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 5;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  background: #ffffffcc;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.view__sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  border-left: 1px solid #e2e8f0;
+  background: #ffffff;
+  overflow-y: auto;
+}
+
+.detail-panel {
+  padding: 14px;
+  font-size: 13px;
+}
+
+.detail-panel--empty {
+  color: #94a3b8;
+}
+
+.detail-panel h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.detail-panel h4 {
+  margin: 14px 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.detail-panel__meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 8px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.detail-panel__meta dt {
+  color: #94a3b8;
+}
+
+.detail-panel__meta dd {
+  margin: 0;
+  word-break: break-all;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.detail-panel__changed-paths {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
+.detail-panel__json {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  overflow: auto;
+  max-height: 320px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

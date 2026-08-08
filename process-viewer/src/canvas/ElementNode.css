@@ -1,0 +1,56 @@
+.element-node {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.element-node__shape {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.element-node__icon {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.element-node--activity .element-node__icon {
+  position: absolute;
+  top: 4px;
+  left: 6px;
+}
+
+.element-node__label {
+  position: relative;
+  z-index: 1;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+  padding: 2px 8px;
+  color: #1e293b;
+  word-break: break-word;
+  pointer-events: none;
+}
+
+.element-node__label--below {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 120px;
+  margin-top: 2px;
+}
+
+.element-node__container-label {
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  pointer-events: none;
+}
