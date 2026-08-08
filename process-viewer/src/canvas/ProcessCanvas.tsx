@@ -6,8 +6,9 @@ import type { ProcessDiffResult } from '../diff/types';
 import { layoutProcess } from './layout';
 import { ElementNode } from './ElementNode';
 import { ConnectorEdge } from './ConnectorEdge';
+import { LaneNode } from './LaneNode';
 
-const nodeTypes: NodeTypes = { processElement: ElementNode };
+const nodeTypes: NodeTypes = { processElement: ElementNode, lane: LaneNode };
 const edgeTypes: EdgeTypes = { connector: ConnectorEdge };
 
 export interface ProcessCanvasProps {

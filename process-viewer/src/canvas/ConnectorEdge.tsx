@@ -1,32 +1,33 @@
-import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps } from '@xyflow/react';
+import { BaseEdge, EdgeLabelRenderer, type EdgeProps } from '@xyflow/react';
 import type { DiffStatus } from '../diff/types';
 import { STATUS_STYLE } from './statusColors';
 import type { VisualPoint } from '../model/schema-types';
 
 export interface ConnectorEdgeData extends Record<string, unknown> {
-  via?: VisualPoint[];
+  /** Fully orthogonal path, pre-computed in `layout.ts` (source anchor, any bends, target anchor). */
+  points: VisualPoint[];
   label?: string;
   status: DiffStatus;
 }
 
-function pathThroughPoints(points: { x: number; y: number }[]): string {
+function pathThroughPoints(points: VisualPoint[]): string {
   return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
 }
 
 export function ConnectorEdge({ sourceX, sourceY, targetX, targetY, data, markerEnd }: EdgeProps & { data: ConnectorEdgeData }) {
   const status = data?.status ?? 'unchanged';
   const style = STATUS_STYLE[status];
-  const via = data?.via ?? [];
+  const points = data?.points && data.points.length > 0 ? data.points : [{ x: sourceX, y: sourceY }, { x: targetX, y: targetY }];
 
-  const [bezierPath, labelX, labelY] =
-    via.length === 0
-      ? getBezierPath({ sourceX, sourceY, targetX, targetY })
-      : [pathThroughPoints([{ x: sourceX, y: sourceY }, ...via, { x: targetX, y: targetY }]), via[Math.floor(via.length / 2)]?.x ?? (sourceX + targetX) / 2, via[Math.floor(via.length / 2)]?.y ?? (sourceY + targetY) / 2];
+  const path = pathThroughPoints(points);
+  const mid = points[Math.floor(points.length / 2)];
+  const labelX = mid?.x ?? (sourceX + targetX) / 2;
+  const labelY = mid?.y ?? (sourceY + targetY) / 2;
 
   return (
     <>
       <BaseEdge
-        path={bezierPath}
+        path={path}
         markerEnd={markerEnd}
         style={{
           stroke: style.stroke,

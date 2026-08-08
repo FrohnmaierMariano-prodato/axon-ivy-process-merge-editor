@@ -5,6 +5,7 @@ import type { DiffStatus } from '../diff/types';
 import { STATUS_STYLE } from './statusColors';
 import { Glyph } from '../icons/Glyph';
 import { glyphForType } from '../icons/elementTypeIcon';
+import { activityBadgeColor, hasExpandMarker } from '../icons/activityBadge';
 import './ElementNode.css';
 
 export interface ElementNodeData extends Record<string, unknown> {
@@ -66,6 +67,8 @@ export function ElementNode({ data }: NodeProps & { data: ElementNodeData }) {
   const style = getStyle(status);
   const label = elementLabel(element);
   const isEventLike = category === 'start' || category === 'end' || category === 'intermediate' || category === 'boundary';
+  const badgeColor = category === 'activity' ? activityBadgeColor(element.type) : undefined;
+  const showExpandMarker = hasExpandMarker(element.type);
 
   return (
     <div className={`element-node element-node--${category}`} style={{ width: size.width, height: size.height }} title={`${element.type} (${element.id})`}>
@@ -75,8 +78,15 @@ export function ElementNode({ data }: NodeProps & { data: ElementNodeData }) {
         <Shape category={category} width={size.width} height={size.height} style={style} />
       </svg>
       {category !== 'container' && (
-        <div className="element-node__icon" style={{ color: style.stroke }}>
-          <Glyph name={glyphForType(element.type)} size={category === 'activity' ? 16 : 12} />
+        <div className={`element-node__icon${badgeColor ? ` element-node__icon--badge element-node__icon--${badgeColor}` : ''}`} style={{ color: badgeColor ? undefined : style.stroke }}>
+          <Glyph name={glyphForType(element.type)} size={category === 'activity' ? 15 : 12} />
+        </div>
+      )}
+      {showExpandMarker && (
+        <div className="element-node__expand-marker" style={{ borderColor: style.stroke }} title="Has collapsed content - press J to open">
+          <svg width={9} height={9} viewBox="0 0 9 9">
+            <path d="M4.5 1v7M1 4.5h7" stroke={style.stroke} strokeWidth={1.3} />
+          </svg>
         </div>
       )}
       {category === 'container' ? (

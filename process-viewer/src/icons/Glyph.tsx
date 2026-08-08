@@ -51,12 +51,19 @@ function renderPaths(name: GlyphName) {
         </>
       );
     case 'error':
-      return <path d="M10 3l7 13H3z M10 9v3 M10 14.2v.1" />;
-    case 'subStart':
+      return <path d="M11 2.5L4 12h4.3l-1.3 5.5L15 9h-4.3z" fill="currentColor" stroke="none" />;
+    case 'subStartDown':
       return (
         <>
-          <path d="M10 3v11" />
-          <path d="M6 10l4 4 4-4" />
+          <path d="M10 3v10" />
+          <path d="M6 9l4 4 4-4" />
+        </>
+      );
+    case 'subEndUp':
+      return (
+        <>
+          <path d="M10 17V7" />
+          <path d="M6 11l4-4 4 4" />
         </>
       );
     case 'globe':
@@ -108,20 +115,25 @@ function renderPaths(name: GlyphName) {
           <path d="M10 6v4l3 2" />
         </>
       );
-    case 'diamond':
-      return <path d="M10 3l7 7-7 7-7-7z" />;
-    case 'split':
+    case 'gatewayExclusive':
       return (
         <>
-          <path d="M4 10h4" />
-          <path d="M8 10l8-5M8 10l8 5" />
+          <path d="M10 2l8 8-8 8-8-8z" />
+          <path d="M7.3 7.3l5.4 5.4M12.7 7.3l-5.4 5.4" />
         </>
       );
-    case 'join':
+    case 'gatewayParallel':
       return (
         <>
-          <path d="M4 5l8 5-8 5" />
-          <path d="M12 10h4" />
+          <path d="M10 2l8 8-8 8-8-8z" />
+          <path d="M10 6.5v7M6.5 10h7" />
+        </>
+      );
+    case 'gatewayTaskSwitch':
+      return (
+        <>
+          <path d="M10 2l8 8-8 8-8-8z" />
+          <rect x={7.5} y={7.5} width={5} height={5} />
         </>
       );
     case 'switch':
@@ -134,16 +146,16 @@ function renderPaths(name: GlyphName) {
     case 'database':
       return (
         <>
-          <ellipse cx={10} cy={5.5} rx={6} ry={2.5} />
-          <path d="M4 5.5v9c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5v-9" />
-          <path d="M4 10c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5" />
+          <rect x={3} y={4} width={14} height={12} rx={1} />
+          <path d="M3 8h14M3 12h14M8 4v12" />
         </>
       );
-    case 'dialog':
+    case 'monitor':
       return (
         <>
           <rect x={3} y={4} width={14} height={10} rx={1} />
-          <path d="M7 17l1.5-3M13 17l-1.5-3" />
+          <path d="M3 7.5h14" />
+          <path d="M8 17h4M10 14v3" />
         </>
       );
     case 'mail':
@@ -158,6 +170,14 @@ function renderPaths(name: GlyphName) {
         <>
           <circle cx={10} cy={10} r={2.6} />
           <path d="M10 3.5v2M10 14.5v2M3.5 10h2M14.5 10h2M5.4 5.4l1.4 1.4M13.2 13.2l1.4 1.4M14.6 5.4l-1.4 1.4M6.8 13.2l-1.4 1.4" />
+        </>
+      );
+    case 'scriptPage':
+      return (
+        <>
+          <path d="M6 3h6l3 3v11H6z" />
+          <path d="M12 3v3h3" />
+          <path d="M8 11l-1.5 1.5L8 14M11 11l1.5 1.5L11 14" />
         </>
       );
     case 'rule':
@@ -175,10 +195,13 @@ function renderPaths(name: GlyphName) {
           <path d="M10 16v2" />
         </>
       );
-    case 'rest':
+    case 'codeBrackets':
+      return <path d="M7.5 5L2.5 10l5 5M12.5 5l5 5-5 5" />;
+    case 'broadcast':
       return (
         <>
-          <path d="M3 6h14M3 10h14M3 14h9" />
+          <circle cx={6} cy={14} r={1.6} fill="currentColor" stroke="none" />
+          <path d="M9 11a5 5 0 0 1 0 6M12 8.3a9 9 0 0 1 0 11.4M15 5.5a13 13 0 0 1 0 17" />
         </>
       );
     case 'subProcess':

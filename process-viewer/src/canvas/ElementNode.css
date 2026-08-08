@@ -23,6 +23,48 @@
   left: 6px;
 }
 
+.element-node__icon--badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  top: 5px;
+  left: 5px;
+}
+
+.element-node__icon--workflow {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.element-node__icon--interface {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.element-node__icon--bpmn {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.element-node__expand-marker {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  z-index: 1;
+  width: 11px;
+  height: 11px;
+  border: 1.2px solid;
+  border-radius: 2px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
 .element-node__label {
   position: relative;
   z-index: 1;

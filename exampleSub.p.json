@@ -1,0 +1,45 @@
+{
+  "$schema" : "https://json-schema.axonivy.com/process/12.0.0/process.json",
+  "id" : "19FE31C493E4D8F7",
+  "kind" : "CALLABLE_SUB",
+  "config" : {
+    "data" : "financial.tracker.part3.exampleSubData"
+  },
+  "elements" : [ {
+      "id" : "f0",
+      "type" : "CallSubStart",
+      "name" : "call(File)",
+      "config" : {
+        "signature" : "call",
+        "input" : {
+          "params" : [
+            { "name" : "audioFile", "type" : "java.io.File", "desc" : "" }
+          ],
+          "map" : {
+            "out.audioFile" : "param.audioFile"
+          }
+        },
+        "result" : {
+          "params" : [
+            { "name" : "transaktionen", "type" : "List<financial.tracker.part3.Transaktion>", "desc" : "" }
+          ],
+          "map" : {
+            "result.transaktionen" : "in.transaktionen"
+          }
+        }
+      },
+      "visual" : {
+        "at" : { "x" : 96, "y" : 64 }
+      },
+      "connect" : [
+        { "id" : "f2", "to" : "f1" }
+      ]
+    }, {
+      "id" : "f1",
+      "type" : "CallSubEnd",
+      "visual" : {
+        "at" : { "x" : 352, "y" : 64 },
+        "labelOffset" : { "x" : 13, "y" : 33 }
+      }
+    } ]
+}

@@ -11,7 +11,8 @@ export type GlyphName =
   | 'signal'
   | 'program'
   | 'error'
-  | 'subStart'
+  | 'subStartDown'
+  | 'subEndUp'
   | 'globe'
   | 'dialogInit'
   | 'dialogMethod'
@@ -19,17 +20,19 @@ export type GlyphName =
   | 'page'
   | 'exit'
   | 'clock'
-  | 'diamond'
-  | 'split'
-  | 'join'
+  | 'gatewayExclusive'
+  | 'gatewayParallel'
+  | 'gatewayTaskSwitch'
   | 'switch'
   | 'database'
-  | 'dialog'
+  | 'monitor'
   | 'mail'
   | 'gear'
+  | 'scriptPage'
   | 'rule'
   | 'plug'
-  | 'rest'
+  | 'codeBrackets'
+  | 'broadcast'
   | 'subProcess'
   | 'trigger'
   | 'userTask'
@@ -46,7 +49,7 @@ const TYPE_TO_GLYPH: Partial<Record<string, GlyphName>> = {
   ProgramStart: 'program',
   ErrorStartEvent: 'error',
   EmbeddedStart: 'play',
-  CallSubStart: 'subStart',
+  CallSubStart: 'subStartDown',
   WebserviceStart: 'globe',
   HtmlDialogStart: 'dialogInit',
   HtmlDialogEventStart: 'dialogEvent',
@@ -57,7 +60,7 @@ const TYPE_TO_GLYPH: Partial<Record<string, GlyphName>> = {
   TaskEndPage: 'page',
   ErrorEnd: 'error',
   EmbeddedEnd: 'stop',
-  CallSubEnd: 'subStart',
+  CallSubEnd: 'subEndUp',
   WebserviceEnd: 'globe',
   HtmlDialogEnd: 'stop',
   HtmlDialogExit: 'exit',
@@ -69,24 +72,24 @@ const TYPE_TO_GLYPH: Partial<Record<string, GlyphName>> = {
   ErrorBoundaryEvent: 'error',
   SignalBoundaryEvent: 'signal',
 
-  Alternative: 'diamond',
-  Split: 'split',
-  Join: 'join',
-  TaskSwitchGateway: 'switch',
+  Alternative: 'gatewayExclusive',
+  Split: 'gatewayParallel',
+  Join: 'gatewayParallel',
+  TaskSwitchGateway: 'gatewayTaskSwitch',
 
   Database: 'database',
-  DialogCall: 'dialog',
+  DialogCall: 'monitor',
   EMail: 'mail',
-  ProgramInterface: 'plug',
+  ProgramInterface: 'codeBrackets',
   ReceiveBpmnElement: 'bpmn',
-  RestClientCall: 'rest',
+  RestClientCall: 'broadcast',
   RuleBpmnElement: 'rule',
-  Script: 'gear',
+  Script: 'scriptPage',
   ScriptBpmnElement: 'gear',
   SendBpmnElement: 'bpmn',
   ServiceBpmnElement: 'bpmn',
   SubProcessCall: 'subProcess',
-  ThirdPartyProgramInterface: 'plug',
+  ThirdPartyProgramInterface: 'codeBrackets',
   TriggerCall: 'trigger',
   UserTask: 'userTask',
   WebServiceCall: 'webService',
