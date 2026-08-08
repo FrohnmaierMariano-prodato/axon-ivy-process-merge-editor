@@ -15,15 +15,56 @@
         "at" : { "x" : 96, "y" : 64 }
       },
       "connect" : [
-        { "id" : "f2", "to" : "f6" }
+        { "id" : "f2", "to" : "f7" }
       ]
     }, {
-      "id" : "f1",
-      "type" : "TaskEnd",
+      "id" : "f7",
+      "type" : "DialogCall",
+      "name" : "upload document",
+      "config" : {
+        "dialog" : "doc.to.form.DocUpload:start()",
+        "call" : {
+          "map" : {
+            "param.upload.maxSizeMb" : "25",
+            "param.upload.allowedTypes" : "in.allowedTypes",
+            "param.upload.compressionLevel" : "in.compressionLevel",
+            "param.notify.email" : "in.requesterEmail",
+            "param.notify.sms" : "in.requesterPhone"
+          }
+        }
+      },
       "visual" : {
-        "at" : { "x" : 744, "y" : 64 },
-        "labelOffset" : { "x" : 13, "y" : 33 }
-      }
+        "at" : { "x" : 208, "y" : 64 }
+      },
+      "connect" : [
+        { "id" : "f5", "to" : "f6" }
+      ]
+    }, {
+      "id" : "f6",
+      "type" : "Script",
+      "name" : "pre-process document",
+      "config" : {
+        "output" : {
+          "code" : [
+            "import localhost.client.OutputFormat;",
+            "",
+            "import ch.ivyteam.ivy.workflow.document.IDocument;",
+            "IDocument d = ivy.case.documents().getAll().getLast() as IDocument;",
+            "",
+            "out.docs.add(d.read().asJavaFile());",
+            "ivy.log.info(\"pre-processing \" + out.docs.getLast());",
+            "",
+            "out.output = [OutputFormat.JSON, OutputFormat.MD];",
+            "out.maxRetries = 3;"
+          ]
+        }
+      },
+      "visual" : {
+        "at" : { "x" : 368, "y" : 64 }
+      },
+      "connect" : [
+        { "id" : "f8", "to" : "f3" }
+      ]
     }, {
       "id" : "f3",
       "type" : "RestClientCall",
@@ -86,31 +127,6 @@
         { "id" : "f4", "to" : "f9", "color" : "default" }
       ]
     }, {
-      "id" : "f6",
-      "type" : "Script",
-      "name" : "pre-process document",
-      "config" : {
-        "output" : {
-          "code" : [
-            "import localhost.client.OutputFormat;",
-            "",
-            "import ch.ivyteam.ivy.workflow.document.IDocument;",
-            "IDocument d = ivy.case.documents().getAll().getLast() as IDocument;",
-            "",
-            "out.docs.add(d.read().asJavaFile());",
-            "ivy.log.info(out.docs.getLast());",
-            "",
-            "out.output = [OutputFormat.JSON];"
-          ]
-        }
-      },
-      "visual" : {
-        "at" : { "x" : 208, "y" : 64 }
-      },
-      "connect" : [
-        { "id" : "f8", "to" : "f3", "color" : "default" }
-      ]
-    }, {
       "id" : "f9",
       "type" : "Script",
       "name" : "post-process document",
@@ -127,5 +143,12 @@
       "connect" : [
         { "id" : "f10", "to" : "f1" }
       ]
+    }, {
+      "id" : "f1",
+      "type" : "TaskEnd",
+      "visual" : {
+        "at" : { "x" : 784, "y" : 64 },
+        "labelOffset" : { "x" : 13, "y" : 33 }
+      }
     } ]
 }
