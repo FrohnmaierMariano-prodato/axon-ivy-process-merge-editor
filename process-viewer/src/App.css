@@ -152,11 +152,20 @@
   background: #e2e8f0;
 }
 
+.view__canvas--split-vertical {
+  flex-direction: column;
+}
+
 .split-pane {
   flex: 1;
   min-width: 0;
   position: relative;
   background: #f8fafc;
+}
+
+.view__canvas--split-vertical .split-pane {
+  min-width: auto;
+  min-height: 0;
 }
 
 .split-pane__label {

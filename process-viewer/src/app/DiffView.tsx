@@ -5,6 +5,7 @@ import { FileOpenButton } from './FileOpenButton';
 import { flattenElements, parseProcess, parseProcessText, ProcessParseError } from '../model/parseProcess';
 import { diffProcess } from '../diff/diffProcess';
 import { useSidebarWidth } from './useSidebarWidth';
+import { useCanvasOrientation } from './useCanvasOrientation';
 import type { ProcessDocument } from '../model/schema-types';
 import leftDemoDoc from '../fixtures/DocumentExample.p.json';
 import rightDemoDoc from '../fixtures/DocumentExample.modified.p.json';
@@ -19,6 +20,7 @@ export function DiffView() {
   const [errors, setErrors] = useState<Partial<Record<Side, string>>>({});
   const [selectedId, setSelectedId] = useState<string>();
   const { width: sidebarWidth, isDragging, onHandlePointerDown } = useSidebarWidth();
+  const { orientation, toggleOrientation } = useCanvasOrientation();
 
   const diff = useMemo(() => (left && right ? diffProcess(left, right) : undefined), [left, right]);
 
@@ -57,9 +59,17 @@ export function DiffView() {
         <FileOpenButton label="Open right .p.json" onLoad={handleLoad('right')} />
         <span className="toolbar__filename">{rightName}</span>
         {errors.right && <span className="toolbar__error">{errors.right}</span>}
+        <button
+          type="button"
+          className="toolbar-button"
+          onClick={toggleOrientation}
+          aria-label="Toggle diff layout orientation"
+        >
+          {orientation === 'horizontal' ? 'Stack vertically' : 'Side by side'}
+        </button>
       </div>
       <div className="view__body">
-        <div className="view__canvas view__canvas--split">
+        <div className={`view__canvas view__canvas--split${orientation === 'vertical' ? ' view__canvas--split-vertical' : ''}`}>
           <div className="split-pane">
             <div className="split-pane__label">Left</div>
             {left && <ProcessCanvas document={left} diff={diff} onSelectElement={setSelectedId} />}
