@@ -35,7 +35,7 @@ export function ProcessCanvas({ document, diff, onSelectElement }: ProcessCanvas
       >
         <Background gap={16} />
         <Controls showInteractive={false} />
-        <MiniMap pannable zoomable />
+        <MiniMap className="process-minimap" pannable zoomable />
       </ReactFlow>
     </ReactFlowProvider>
   );

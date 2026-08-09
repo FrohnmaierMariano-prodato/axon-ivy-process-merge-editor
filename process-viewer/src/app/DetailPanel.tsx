@@ -296,11 +296,11 @@ function DiffParamsTable({ left, right }: { left: ParamLike[]; right: ParamLike[
 }
 
 /** Diff-aware `CodeBlock`: renders a compact +/- line diff (LCS-based) instead of the plain snippet. */
-function DiffCodeBlock({ left, right }: { left?: string | string[]; right?: string | string[] }) {
+function DiffCodeBlock({ left, right, className }: { left?: string | string[]; right?: string | string[]; className?: string }) {
   const lines = diffCodeLines(left, right);
   if (lines.length === 0) return null;
   return (
-    <pre className="detail-code detail-code-diff">
+    <pre className={`detail-code detail-code-diff${className ? ` ${className}` : ''}`}>
       {lines.map((line, i) => (
         <div key={i} className={`detail-code-diff__line detail-code-diff__line--${line.status}`}>
           <span className="detail-code-diff__marker">{line.status === 'added' ? '+' : line.status === 'removed' ? '-' : '\u00a0'}</span>
@@ -498,16 +498,11 @@ export function DetailPanel({ element, diffEntry }: DetailPanelProps) {
         <summary className="detail-section__title">Raw config (JSON)</summary>
         <div className="detail-section__body">
           {isDiffMode ? (
-            <div className="detail-panel__json-diff">
-              <div className="detail-panel__json-diff-col">
-                <div className="detail-panel__json-diff-label">Left</div>
-                <pre className="detail-panel__json">{JSON.stringify(leftConfig, null, 2)}</pre>
-              </div>
-              <div className="detail-panel__json-diff-col">
-                <div className="detail-panel__json-diff-label">Right</div>
-                <pre className="detail-panel__json">{JSON.stringify(rightConfig, null, 2)}</pre>
-              </div>
-            </div>
+            <DiffCodeBlock
+              className="detail-panel__json-diff-code"
+              left={JSON.stringify(leftConfig, null, 2)}
+              right={JSON.stringify(rightConfig, null, 2)}
+            />
           ) : (
             <pre className="detail-panel__json">{JSON.stringify(element.config ?? {}, null, 2)}</pre>
           )}

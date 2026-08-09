@@ -482,16 +482,18 @@
   word-break: break-word;
 }
 
-.detail-panel__json-diff {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+.detail-panel__json-diff-code {
+  max-height: 400px;
 }
 
-.detail-panel__json-diff-label {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: #94a3b8;
-  margin-bottom: 3px;
+/* Shrink the react-flow minimap so it doesn't obscure the process; !important is needed to beat the library's inline width/height. */
+.process-minimap {
+  width: 90px !important;
+  height: 65px !important;
+  transition: width 0.15s ease, height 0.15s ease;
+}
+
+.process-minimap:hover {
+  width: 200px !important;
+  height: 150px !important;
 }

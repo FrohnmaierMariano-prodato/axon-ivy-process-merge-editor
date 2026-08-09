@@ -1,13 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const MIN_WIDTH = 220;
-const MAX_WIDTH = 640;
+const MIN_CANVAS_WIDTH = 320;
 const DEFAULT_WIDTH = 320;
 const STORAGE_KEY = 'processViewer.sidebarWidth';
 
+/** No fixed cap - the sidebar (and its raw-JSON diff) may grow as wide as desired, short of crowding out the canvas. */
+function getMaxWidth(): number {
+  return Math.max(MIN_WIDTH, window.innerWidth - MIN_CANVAS_WIDTH);
+}
+
 function readStoredWidth(): number {
   const stored = Number(localStorage.getItem(STORAGE_KEY));
-  return Number.isFinite(stored) && stored >= MIN_WIDTH && stored <= MAX_WIDTH ? stored : DEFAULT_WIDTH;
+  const maxWidth = getMaxWidth();
+  return Number.isFinite(stored) && stored >= MIN_WIDTH && stored <= maxWidth ? stored : DEFAULT_WIDTH;
 }
 
 /**
@@ -27,7 +33,7 @@ export function useSidebarWidth() {
       const drag = dragStartRef.current;
       if (!drag) return;
       const delta = drag.pointerX - event.clientX;
-      setWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, drag.startWidth + delta)));
+      setWidth(Math.min(getMaxWidth(), Math.max(MIN_WIDTH, drag.startWidth + delta)));
     };
     const handlePointerUp = () => {
       dragStartRef.current = null;
