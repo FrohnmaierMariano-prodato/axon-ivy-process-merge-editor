@@ -11,6 +11,10 @@ import { LaneNode } from './LaneNode';
 const nodeTypes: NodeTypes = { processElement: ElementNode, lane: LaneNode };
 const edgeTypes: EdgeTypes = { connector: ConnectorEdge };
 
+// Passed as `style` (not just a CSS class) so MiniMap's internal viewBox/scale math - which reads
+// `style.width`/`style.height` rather than the rendered box size - stays in sync with the actual size.
+const MINIMAP_STYLE = { width: 110, height: 80 };
+
 export interface ProcessCanvasProps {
   document: ProcessDocument;
   diff?: ProcessDiffResult;
@@ -35,7 +39,7 @@ export function ProcessCanvas({ document, diff, onSelectElement }: ProcessCanvas
       >
         <Background gap={16} />
         <Controls showInteractive={false} />
-        <MiniMap className="process-minimap" pannable zoomable />
+        <MiniMap className="process-minimap" style={MINIMAP_STYLE} pannable zoomable />
       </ReactFlow>
     </ReactFlowProvider>
   );

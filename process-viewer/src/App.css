@@ -486,14 +486,17 @@
   max-height: 400px;
 }
 
-/* Shrink the react-flow minimap so it doesn't obscure the process; !important is needed to beat the library's inline width/height. */
+/*
+ * Shrink the react-flow minimap so it doesn't obscure the process. Sized via the `style` prop (see
+ * MINIMAP_STYLE in ProcessCanvas.tsx) rather than here, so its internal viewport/mask math lines up
+ * exactly with the rendered box - hover-enlarge below is a pure visual `transform`, which (unlike
+ * resizing the box) never touches that math and so can't cause a mismatch between the mask and nodes.
+ */
 .process-minimap {
-  width: 90px !important;
-  height: 65px !important;
-  transition: width 0.15s ease, height 0.15s ease;
+  transform-origin: bottom right;
+  transition: transform 0.15s ease;
 }
 
 .process-minimap:hover {
-  width: 200px !important;
-  height: 150px !important;
+  transform: scale(1.85);
 }
