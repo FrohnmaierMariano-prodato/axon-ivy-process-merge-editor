@@ -131,6 +131,8 @@ function buildLaneNodes(lanes: VisualLane[] | undefined, maxX: number): Node<Lan
       position: { x: 0, y: poolOffset },
       data: { label: pool.name, variant: 'pool' },
       style: { width: maxX, height: poolSize },
+      width: maxX,
+      height: poolSize,
       draggable: false,
       selectable: false,
       focusable: false,
@@ -141,12 +143,15 @@ function buildLaneNodes(lanes: VisualLane[] | undefined, maxX: number): Node<Lan
     (pool.lanes ?? []).forEach((lane, laneIndex) => {
       const laneOffset = lane.offset ?? cursor;
       const laneSize = lane.size ?? 0;
+      const laneWidth = Math.max(maxX - LANE_LABEL_WIDTH, 0);
       laneNodes.push({
         id: `__pool_${poolIndex}_lane_${laneIndex}`,
         type: 'lane',
         position: { x: LANE_LABEL_WIDTH, y: laneOffset },
         data: { label: lane.name, variant: 'lane' },
-        style: { width: Math.max(maxX - LANE_LABEL_WIDTH, 0), height: laneSize },
+        style: { width: laneWidth, height: laneSize },
+        width: laneWidth,
+        height: laneSize,
         draggable: false,
         selectable: false,
         focusable: false,
@@ -205,6 +210,8 @@ export function layoutProcess(doc: ProcessDocument, diff?: ProcessDiffResult): L
         parentId,
         data: { element, status },
         style: { width: size.width, height: size.height },
+        width: size.width,
+        height: size.height,
         draggable: false,
         selectable: true
       });
@@ -241,6 +248,8 @@ export function layoutProcess(doc: ProcessDocument, diff?: ProcessDiffResult): L
             parentId: element.id,
             data: { element: boundary, status: boundaryStatus },
             style: { width: boundarySize.width, height: boundarySize.height },
+            width: boundarySize.width,
+            height: boundarySize.height,
             draggable: false,
             selectable: true
           });
