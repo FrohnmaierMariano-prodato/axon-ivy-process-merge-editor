@@ -93,6 +93,143 @@
   color: #0369a1;
 }
 
+.git-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.git-control select {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 13px;
+  max-width: 320px;
+}
+
+.git-control input {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 13px;
+  min-width: 240px;
+}
+
+.file-picker {
+  position: relative;
+}
+
+.file-picker__input {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 13px;
+  min-width: 340px;
+}
+
+.file-picker__list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  left: 0;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  width: min(560px, 80vw);
+  max-height: 320px;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+}
+
+.file-picker__item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.file-picker__item--active {
+  background: #eff6ff;
+}
+
+.file-picker__item--current {
+  outline: 1px solid #bfdbfe;
+}
+
+.file-picker__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.file-picker__dir {
+  font-size: 11px;
+  color: #94a3b8;
+  word-break: break-all;
+}
+
+.file-picker__empty,
+.file-picker__more {
+  padding: 6px 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.file-picker__sublist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.file-picker__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.file-picker__row:hover {
+  background: #f1f5f9;
+}
+
+.file-picker__icon {
+  flex: none;
+  width: 14px;
+  text-align: center;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.file-picker__folder-name {
+  color: #334155;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.file-picker__file .file-picker__name {
+  font-weight: 500;
+  color: #0f172a;
+  word-break: break-all;
+}
+
+.file-picker__file--current {
+  background: #eff6ff;
+  outline: 1px solid #bfdbfe;
+}
+
 .breadcrumb {
   display: flex;
   align-items: center;
