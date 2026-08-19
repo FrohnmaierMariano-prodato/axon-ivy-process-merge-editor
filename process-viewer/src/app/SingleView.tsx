@@ -4,7 +4,8 @@ import { DetailPanel } from './DetailPanel';
 import { FileOpenButton } from './FileOpenButton';
 import { FolderOpenButton, type FolderFile } from './FolderOpenButton';
 import { flattenElements, parseProcess, parseProcessText, ProcessParseError } from '../model/parseProcess';
-import { ProcessRegistry, extractProcessReference } from '../model/processRegistry';
+import { ProcessRegistry } from '../model/processRegistry';
+import { getElementReference } from '../model/jumpTarget';
 import { hasHiddenChildren } from '../icons/activityBadge';
 import { useSidebarWidth } from './useSidebarWidth';
 import type { ProcessDocument, ProcessElement } from '../model/schema-types';
@@ -62,8 +63,8 @@ export function SingleView() {
     return flattenElements(current.doc.elements).find(el => el.id === selectedId);
   }, [current, selectedId]);
 
-  // "J" jumps into a SubProcessCall's target file, or one level deeper into a collapsed
-  // BPMN activity's embedded content - mirrors the Designer shortcut.
+  // "J" jumps into a SubProcessCall/TriggerCall/DialogCall target file, or one level deeper into a
+  // collapsed BPMN activity's embedded content - mirrors the Designer shortcut.
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'j' && event.key !== 'J') return;
@@ -79,18 +80,15 @@ export function SingleView() {
         return;
       }
 
-      if (selectedElement.type === 'SubProcessCall') {
-        const processCall = selectedElement.config?.processCall;
-        const reference = extractProcessReference(typeof processCall === 'string' ? processCall : undefined);
-        if (!reference) return;
-        const resolved = registryRef.current.resolve(reference);
-        if (resolved) {
-          setFrames(prev => [...prev, { doc: resolved.doc, label: resolved.path }]);
-          setSelectedId(undefined);
-          setMessage(undefined);
-        } else {
-          setMessage(`Open "${reference}.p.json" (via "Open file" or "Open folder") to jump there.`);
-        }
+      const reference = getElementReference(selectedElement);
+      if (!reference) return;
+      const resolved = registryRef.current.resolve(reference);
+      if (resolved) {
+        setFrames(prev => [...prev, { doc: resolved.doc, label: resolved.path }]);
+        setSelectedId(undefined);
+        setMessage(undefined);
+      } else {
+        setMessage(`Open "${reference}.p.json" (via "Open file" or "Open folder") to jump there.`);
       }
     };
     window.addEventListener('keydown', handleKeyDown);

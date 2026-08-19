@@ -27,7 +27,7 @@ Use **Single view** to explore one process file at a time.
 - **Open .p.json** loads a single file from disk.
 - **Open folder…** recursively registers every `.p.json`/`.json` file in a folder so that `SubProcessCall` references can be resolved by name.
 - Click any element to open its **detail panel** on the right, showing its type, id, and a Designer-like breakdown of its configuration (dialog signatures, call/output mappings, embedded code, parameter tables, etc.), plus the raw JSON as a fallback.
-- Press **J** with an element selected to jump into it: into a collapsed BPMN activity's embedded content, or into the target process of a `SubProcessCall` (if it has been registered via "Open folder…"). A breadcrumb bar lets you jump back out again.
+- Press **J** with an element selected to jump into it: into a collapsed BPMN activity's embedded content, or into the target file of a `SubProcessCall`, `TriggerCall`, or `DialogCall` (if it has been registered via "Open folder…"). A breadcrumb bar lets you jump back out again.
 - The diagram supports panning, zooming, and a minimap (bottom-right) via the standard canvas controls (bottom-left).
 
 ![Single view: process diagram with the detail panel showing a Designer-style "Call" mapping table](process-viewer/docs/screenshots/single-view.png)
@@ -78,6 +78,7 @@ Use **Git diff view** to compare versions of a process file **directly from git 
   - **Browse** as a collapsible **folder tree** (single-child folder chains are collapsed for compactness).
   - **Search** by typing — substring match anywhere in the path (filename *or* folders), space-separated terms all match, with keyboard navigation.
 - **New / untracked files** are handled gracefully: if the file doesn't exist at a ref (e.g. a brand-new file has no `HEAD` version, or a file was deleted in the working tree), that side renders as empty and the whole file shows as added/removed, with an info note instead of an error.
+- **Jump between files with `J`** — just like Single view, select a `SubProcessCall`, `TriggerCall`, or `DialogCall` and press **J** to open the *referenced* process, diffed at the **same Base/Target refs**. The reference is resolved against the repo's tracked (and changed) `*.p.json` files, so no manual folder registration is needed. A breadcrumb bar tracks the navigation chain and lets you jump back out. Collapsed BPMN activities can also be drilled into in place.
 
 ### Choosing the repository and file
 

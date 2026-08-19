@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DualProcessDiff } from './DualProcessDiff';
+import { DualProcessDiff, type JumpResult } from './DualProcessDiff';
 import { FilePicker } from './FilePicker';
 import { parseProcessText, ProcessParseError } from '../model/parseProcess';
+import { resolveProcessPath } from '../model/processRegistry';
 import { HttpGitProvider, WORKING_TREE, type ChangeStatus, type GitCommit, type GitRef } from '../git/gitProvider';
 import type { ProcessDocument } from '../model/schema-types';
 
@@ -138,6 +139,37 @@ export function GitDiffView() {
   const repoName = repo ? basename(repo) : 'server repo';
   const context = file ? `${repoName} / ${basename(file)}` : repoName;
 
+  // Load a referenced process (SubProcessCall/TriggerCall/DialogCall target) at the same
+  // base/target refs, so "J" opens its diff just like drilling into the current file's changes.
+  const resolveJump = useCallback(
+    async (reference: string): Promise<JumpResult> => {
+      const path = resolveProcessPath(reference, pickerFiles);
+      if (!path) return { note: `No process file matching "${reference}" found in this repo.` };
+      try {
+        const [baseText, targetText] = await Promise.all([
+          provider.readAtRef(path, baseRef),
+          provider.readAtRef(path, targetRef)
+        ]);
+        const jumpLeft = baseText === null ? EMPTY_DOCUMENT : parseProcessText(baseText);
+        const jumpRight = targetText === null ? EMPTY_DOCUMENT : parseProcessText(targetText);
+        const jumpContext = `${repoName} / ${basename(path)}`;
+        return {
+          frame: {
+            left: jumpLeft,
+            right: jumpRight,
+            leftLabel: `${jumpContext} — ${refLabel(baseRef, commits)}`,
+            rightLabel: `${jumpContext} — ${refLabel(targetRef, commits)}`,
+            crumb: basename(path)
+          }
+        };
+      } catch (e) {
+        const message = e instanceof ProcessParseError ? e.message : (e as Error).message;
+        return { note: `Cannot open "${path}": ${message}` };
+      }
+    },
+    [pickerFiles, provider, baseRef, targetRef, commits, repoName]
+  );
+
   const toolbar = (
     <>
       <label className="git-control">
@@ -190,7 +222,9 @@ export function GitDiffView() {
       right={right}
       leftLabel={`${context} — ${refLabel(baseRef, commits)}`}
       rightLabel={`${context} — ${refLabel(targetRef, commits)}`}
+      rootLabel={file ? basename(file) : repoName}
       toolbar={toolbar}
+      resolveJump={resolveJump}
     />
   );
 }
