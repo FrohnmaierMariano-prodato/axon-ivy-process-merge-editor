@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ProcessCanvas } from '../canvas/ProcessCanvas';
 import { DetailPanel } from './DetailPanel';
 import { flattenElements } from '../model/parseProcess';
 import { diffProcess } from '../diff/diffProcess';
-import { childDocument, getElementReference } from '../model/jumpTarget';
+import { childDocument, getElementReference, getJumpInfo } from '../model/jumpTarget';
 import { hasHiddenChildren } from '../icons/activityBadge';
 import { useSidebarWidth } from './useSidebarWidth';
 import { useCanvasOrientation } from './useCanvasOrientation';
@@ -82,18 +82,13 @@ export function DualProcessDiff({ left, right, leftLabel, rightLabel, rootLabel,
 
   const selectedDiffEntry = selectedId ? diff?.elements.get(selectedId) : undefined;
 
-  // "J" drills into a collapsed BPMN activity's embedded content, or jumps into a referenced
-  // process file (via the injected resolver) - mirrors the single view / Designer shortcut.
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'j' && event.key !== 'J') return;
-      const target = event.target as HTMLElement | null;
-      if (target && /^(input|textarea)$/i.test(target.tagName)) return;
-      if (!selectedElement) return;
-
-      if (hasHiddenChildren(selectedElement.type) && selectedElement.elements && selectedElement.elements.length > 0) {
-        const childLeft = current.left && childDocument(current.left, selectedElement.id);
-        const childRight = current.right && childDocument(current.right, selectedElement.id);
+  // Drills into a collapsed BPMN activity's embedded content, or jumps into a referenced process
+  // file (via the injected resolver) - mirrors the single view / Designer shortcut.
+  const jumpFromElement = useCallback(
+    (element: ProcessElement) => {
+      if (hasHiddenChildren(element.type) && element.elements && element.elements.length > 0) {
+        const childLeft = current.left && childDocument(current.left, element.id);
+        const childRight = current.right && childDocument(current.right, element.id);
         setFrames(prev => [
           ...prev,
           {
@@ -101,7 +96,7 @@ export function DualProcessDiff({ left, right, leftLabel, rightLabel, rootLabel,
             right: childRight,
             leftLabel: current.leftLabel,
             rightLabel: current.rightLabel,
-            crumb: elementLabel(selectedElement)
+            crumb: elementLabel(element)
           }
         ]);
         setSelectedId(undefined);
@@ -109,7 +104,7 @@ export function DualProcessDiff({ left, right, leftLabel, rightLabel, rootLabel,
         return;
       }
 
-      const reference = getElementReference(selectedElement);
+      const reference = getElementReference(element);
       if (!reference) return;
       if (!resolveJump) {
         setNote('Cross-file jumps are only available in the git diff view.');
@@ -124,10 +119,23 @@ export function DualProcessDiff({ left, right, leftLabel, rightLabel, rootLabel,
           setNote(result.note ?? `Could not resolve "${reference}".`);
         }
       });
+    },
+    [current, resolveJump]
+  );
+
+  // "J" triggers the jump for the selected element.
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'j' && event.key !== 'J') return;
+      const target = event.target as HTMLElement | null;
+      if (target && /^(input|textarea)$/i.test(target.tagName)) return;
+      if (selectedElement) jumpFromElement(selectedElement);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [current, selectedElement, resolveJump]);
+  }, [selectedElement, jumpFromElement]);
+
+  const jumpInfo = selectedElement ? getJumpInfo(selectedElement) : undefined;
 
   const jumpToFrame = (index: number) => {
     setFrames(prev => prev.slice(0, index + 1));
@@ -181,7 +189,12 @@ export function DualProcessDiff({ left, right, leftLabel, rightLabel, rootLabel,
           aria-label="Resize detail sidebar"
         />
         <div className="view__sidebar" style={{ width: sidebarWidth }}>
-          <DetailPanel element={selectedElement} diffEntry={selectedDiffEntry} />
+          <DetailPanel
+            element={selectedElement}
+            diffEntry={selectedDiffEntry}
+            onJump={jumpInfo && selectedElement ? () => jumpFromElement(selectedElement) : undefined}
+            jumpLabel={jumpInfo?.label}
+          />
         </div>
       </div>
     </div>

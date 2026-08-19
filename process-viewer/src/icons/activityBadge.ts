@@ -45,7 +45,10 @@ export function hasHiddenChildren(type: ElementType): boolean {
   return HIDDEN_CHILDREN_TYPES.has(type);
 }
 
-/** Types that show the small bottom-right "expand" (collapsed sub-process) marker. */
+/** Activity types that navigate to another process/dialog file when you press "J" (get the same marker). */
+const JUMP_MARKER_TYPES = new Set<ElementType>(['SubProcessCall', 'TriggerCall', 'DialogCall', 'UserTask']);
+
+/** Types that show the small bottom-right "expand" marker (collapsed sub-process, or a jump to a connected process). */
 export function hasExpandMarker(type: ElementType): boolean {
-  return hasHiddenChildren(type) || type === 'SubProcessCall';
+  return hasHiddenChildren(type) || JUMP_MARKER_TYPES.has(type);
 }

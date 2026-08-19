@@ -67,7 +67,14 @@ export function resolveProcessPath(reference: string, paths: Iterable<string>): 
   let best: string | undefined;
   let bestScore = 0;
   for (const path of paths) {
-    const score = suffixMatchLength(pathToSegments(path), wantedSegments);
+    const segments = pathToSegments(path);
+    let score = suffixMatchLength(segments, wantedSegments);
+    // HTML dialogs live at `.../<Dialog>/<Dialog>Process.p.json` but are referenced as `...<Dialog>`,
+    // so also try matching with the redundant trailing "...Process" file segment collapsed away.
+    const last = segments.length - 1;
+    if (last >= 1 && segments[last] === `${segments[last - 1]}Process`) {
+      score = Math.max(score, suffixMatchLength(segments.slice(0, last), wantedSegments));
+    }
     if (score > 0 && score > bestScore) {
       bestScore = score;
       best = path;

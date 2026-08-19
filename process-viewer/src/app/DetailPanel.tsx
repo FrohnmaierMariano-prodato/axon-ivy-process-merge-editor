@@ -17,6 +17,10 @@ import {
 export interface DetailPanelProps {
   element?: ProcessElement;
   diffEntry?: ElementDiffEntry;
+  /** When set, renders an "open connected resource" button that triggers the jump. */
+  onJump?: () => void;
+  /** Label for the jump button (e.g. "Open called process"). */
+  jumpLabel?: string;
 }
 
 function elementLabel(element: ProcessElement): string {
@@ -393,7 +397,7 @@ function ConfigObjectDiff({ left, right }: { left: Record<string, unknown>; righ
   );
 }
 
-export function DetailPanel({ element, diffEntry }: DetailPanelProps) {
+export function DetailPanel({ element, diffEntry, onJump, jumpLabel }: DetailPanelProps) {
   const isDiffMode = diffEntry?.status === 'modified' && !!diffEntry.left && !!diffEntry.right;
   const leftEl = diffEntry?.left;
   const rightEl = diffEntry?.right;
@@ -418,6 +422,16 @@ export function DetailPanel({ element, diffEntry }: DetailPanelProps) {
   return (
     <div className="detail-panel">
       <h3>{elementLabel(element)}</h3>
+
+      {onJump && (
+        <button type="button" className="detail-jump-button" onClick={onJump}>
+          <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden="true">
+            <path d="M3 11L11 3M5 3h6v6" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span>{jumpLabel ?? 'Open connected process'}</span>
+          <kbd className="detail-jump-button__kbd">J</kbd>
+        </button>
+      )}
 
       {hasSummary && (
         <div className="detail-diff-summary">

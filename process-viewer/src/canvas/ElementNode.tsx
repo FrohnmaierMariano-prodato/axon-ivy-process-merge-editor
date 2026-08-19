@@ -83,7 +83,7 @@ export function ElementNode({ data }: NodeProps & { data: ElementNodeData }) {
         </div>
       )}
       {showExpandMarker && (
-        <div className="element-node__expand-marker" style={{ borderColor: style.stroke }} title="Has collapsed content - press J to open">
+        <div className="element-node__expand-marker" style={{ borderColor: style.stroke }} title="Press J to open the connected process">
           <svg width={9} height={9} viewBox="0 0 9 9">
             <path d="M4.5 1v7M1 4.5h7" stroke={style.stroke} strokeWidth={1.3} />
           </svg>

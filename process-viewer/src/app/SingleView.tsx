@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ProcessCanvas } from '../canvas/ProcessCanvas';
 import { DetailPanel } from './DetailPanel';
 import { FileOpenButton } from './FileOpenButton';
 import { FolderOpenButton, type FolderFile } from './FolderOpenButton';
 import { flattenElements, parseProcess, parseProcessText, ProcessParseError } from '../model/parseProcess';
 import { ProcessRegistry } from '../model/processRegistry';
-import { getElementReference } from '../model/jumpTarget';
+import { childDocument, getElementReference, getJumpInfo } from '../model/jumpTarget';
 import { hasHiddenChildren } from '../icons/activityBadge';
 import { useSidebarWidth } from './useSidebarWidth';
 import type { ProcessDocument, ProcessElement } from '../model/schema-types';
@@ -63,24 +63,21 @@ export function SingleView() {
     return flattenElements(current.doc.elements).find(el => el.id === selectedId);
   }, [current, selectedId]);
 
-  // "J" jumps into a SubProcessCall/TriggerCall/DialogCall target file, or one level deeper into a
-  // collapsed BPMN activity's embedded content - mirrors the Designer shortcut.
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'j' && event.key !== 'J') return;
-      const target = event.target as HTMLElement | null;
-      if (target && /^(input|textarea)$/i.test(target.tagName)) return;
-      if (!selectedElement) return;
-
-      if (hasHiddenChildren(selectedElement.type) && selectedElement.elements && selectedElement.elements.length > 0) {
-        const childDoc: ProcessDocument = { ...current.doc, id: selectedElement.id, elements: selectedElement.elements };
-        setFrames(prev => [...prev, { doc: childDoc, label: elementLabel(selectedElement) }]);
-        setSelectedId(undefined);
-        setMessage(undefined);
+  // Jumps into a SubProcessCall/TriggerCall/DialogCall/UserTask target file, or one level deeper
+  // into a collapsed BPMN activity's embedded content - mirrors the Designer shortcut.
+  const jumpFromElement = useCallback(
+    (element: ProcessElement) => {
+      if (hasHiddenChildren(element.type) && element.elements && element.elements.length > 0) {
+        const childDoc = childDocument(current.doc, element.id);
+        if (childDoc) {
+          setFrames(prev => [...prev, { doc: childDoc, label: elementLabel(element) }]);
+          setSelectedId(undefined);
+          setMessage(undefined);
+        }
         return;
       }
 
-      const reference = getElementReference(selectedElement);
+      const reference = getElementReference(element);
       if (!reference) return;
       const resolved = registryRef.current.resolve(reference);
       if (resolved) {
@@ -90,10 +87,23 @@ export function SingleView() {
       } else {
         setMessage(`Open "${reference}.p.json" (via "Open file" or "Open folder") to jump there.`);
       }
+    },
+    [current]
+  );
+
+  // "J" triggers the jump for the selected element.
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'j' && event.key !== 'J') return;
+      const target = event.target as HTMLElement | null;
+      if (target && /^(input|textarea)$/i.test(target.tagName)) return;
+      if (selectedElement) jumpFromElement(selectedElement);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [current, selectedElement]);
+  }, [selectedElement, jumpFromElement]);
+
+  const jumpInfo = selectedElement ? getJumpInfo(selectedElement) : undefined;
 
   const jumpToFrame = (index: number) => {
     setFrames(prev => prev.slice(0, index + 1));
@@ -134,7 +144,11 @@ export function SingleView() {
           aria-label="Resize detail sidebar"
         />
         <div className="view__sidebar" style={{ width: sidebarWidth }}>
-          <DetailPanel element={selectedElement} />
+          <DetailPanel
+            element={selectedElement}
+            onJump={jumpInfo && selectedElement ? () => jumpFromElement(selectedElement) : undefined}
+            jumpLabel={jumpInfo?.label}
+          />
         </div>
       </div>
     </div>
