@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DualProcessDiff } from './DualProcessDiff';
 import { FilePicker } from './FilePicker';
 import { parseProcessText, ProcessParseError } from '../model/parseProcess';
-import { HttpGitProvider, WORKING_TREE, type GitCommit, type GitRef } from '../git/gitProvider';
+import { HttpGitProvider, WORKING_TREE, type ChangeStatus, type GitCommit, type GitRef } from '../git/gitProvider';
 import type { ProcessDocument } from '../model/schema-types';
 
 const HEAD_REF = 'HEAD';
@@ -36,6 +36,7 @@ export function GitDiffView() {
   const [files, setFiles] = useState<string[]>([]);
   const [file, setFile] = useState<string>(() => initialFileFromUrl());
   const [commits, setCommits] = useState<GitCommit[]>([]);
+  const [changed, setChanged] = useState<Map<string, ChangeStatus>>(new Map());
   const [baseRef, setBaseRef] = useState<GitRef>(HEAD_REF);
   const [targetRef, setTargetRef] = useState<GitRef>(WORKING_TREE);
   const [left, setLeft] = useState<ProcessDocument>();
@@ -54,6 +55,21 @@ export function GitDiffView() {
       })
       .catch(e => setErrors(prev => ({ ...prev, general: (e as Error).message })));
   }, [provider]);
+
+  // Load which files have local changes so the picker can highlight them.
+  useEffect(() => {
+    provider
+      .listChangedFiles()
+      .then(list => setChanged(new Map(list.map(c => [c.path, c.status]))))
+      .catch(() => setChanged(new Map()));
+  }, [provider]);
+
+  // Untracked *.p.json aren't returned by listFiles; surface them in the picker too.
+  const pickerFiles = useMemo(() => {
+    const set = new Set(files);
+    for (const path of changed.keys()) set.add(path);
+    return [...set];
+  }, [files, changed]);
 
   // Refresh commit history whenever the selected file changes.
   useEffect(() => {
@@ -137,7 +153,7 @@ export function GitDiffView() {
       </label>
       <label className="git-control">
         <span>File</span>
-        <FilePicker files={files} value={file} onChange={setFile} />
+        <FilePicker files={pickerFiles} value={file} onChange={setFile} changed={changed} />
       </label>
       <label className="git-control">
         <span>Base</span>

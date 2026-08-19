@@ -15,6 +15,13 @@ export interface GitCommit {
 export const WORKING_TREE = 'WORKING' as const;
 export type GitRef = typeof WORKING_TREE | string;
 
+export type ChangeStatus = 'modified' | 'added' | 'deleted' | 'untracked' | 'renamed';
+
+export interface ChangedFile {
+  path: string;
+  status: ChangeStatus;
+}
+
 export interface GitProvider {
   /** Repo-relative paths of tracked *.p.json files. */
   listFiles(): Promise<string[]>;
@@ -23,6 +30,8 @@ export interface GitProvider {
   /** File contents at a given ref (or the working tree), or null if absent at that ref. */
   readAtRef(file: string, ref: GitRef): Promise<string | null>;
   hasUnstagedChanges(file: string): Promise<boolean>;
+  /** Repo-relative *.p.json paths with local (working-tree) changes. */
+  listChangedFiles(): Promise<ChangedFile[]>;
 }
 
 async function getJson<T>(url: string): Promise<T> {
@@ -72,5 +81,10 @@ export class HttpGitProvider implements GitProvider {
       this.url('/status', { file })
     );
     return hasUnstagedChanges;
+  }
+
+  async listChangedFiles(): Promise<ChangedFile[]> {
+    const { changes } = await getJson<{ changes: ChangedFile[] }>(this.url('/changes'));
+    return changes;
   }
 }

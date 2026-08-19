@@ -56,4 +56,13 @@ describe('HttpGitProvider', () => {
     const provider = new HttpGitProvider();
     await expect(provider.listFiles()).rejects.toThrow('boom');
   });
+
+  it('lists changed files from the changes endpoint', async () => {
+    const changes = [{ path: 'sub/Other.p.json', status: 'modified' }];
+    const fetchMock = vi.fn((_url: string) => Promise.resolve({ ok: true, status: 200, json: async () => ({ changes }) } as unknown as Response));
+    vi.stubGlobal('fetch', fetchMock);
+    const provider = new HttpGitProvider();
+    expect(await provider.listChangedFiles()).toEqual(changes);
+    expect(fetchMock.mock.calls[0][0]).toContain('/changes');
+  });
 });

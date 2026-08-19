@@ -67,6 +67,51 @@ export function safeRelativePath(root: string, file: string): string | undefined
   return rel.split(path.sep).join('/');
 }
 
+export type ChangeStatus = 'modified' | 'added' | 'deleted' | 'untracked' | 'renamed';
+
+export interface ChangedFile {
+  path: string;
+  status: ChangeStatus;
+}
+
+// Git may quote paths containing special chars ("path\twith\ttab"); unquote conservatively.
+function unquotePath(p: string): string {
+  if (p.length >= 2 && p.startsWith('"') && p.endsWith('"')) {
+    return p
+      .slice(1, -1)
+      .replace(/\\t/g, '\t')
+      .replace(/\\n/g, '\n')
+      .replace(/\\"/g, '"')
+      .replace(/\\\\/g, '\\');
+  }
+  return p;
+}
+
+function classifyStatus(code: string): ChangeStatus {
+  if (code.includes('?')) return 'untracked';
+  if (code.includes('R')) return 'renamed';
+  if (code.includes('D')) return 'deleted';
+  if (code.includes('A')) return 'added';
+  return 'modified';
+}
+
+/** Parses `git status --porcelain` output into changed `*.p.json` files with a coarse status. */
+export function parseStatusPorcelain(stdout: string): ChangedFile[] {
+  const changes: ChangedFile[] = [];
+  for (const line of stdout.split('\n')) {
+    if (line.length < 4) continue;
+    const code = line.slice(0, 2);
+    let rest = line.slice(3);
+    // Renames/copies are reported as "old -> new"; the current path is on the right.
+    const arrow = rest.indexOf(' -> ');
+    if (arrow >= 0) rest = rest.slice(arrow + 4);
+    const filePath = unquotePath(rest.trim());
+    if (!filePath || !ALLOWED_FILE.test(filePath)) continue;
+    changes.push({ path: filePath, status: classifyStatus(code) });
+  }
+  return changes;
+}
+
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
   const payload = JSON.stringify(body);
   res.statusCode = status;
@@ -174,6 +219,17 @@ async function handleStatus(res: ServerResponse, root: string, file: string): Pr
   sendJson(res, 200, { hasUnstagedChanges: result.stdout.trim().length > 0 });
 }
 
+async function handleChanges(res: ServerResponse, root: string): Promise<void> {
+  // -uall lists individual untracked files (not just their parent dir) so new *.p.json show up.
+  // The `*.p.json` pathspec (git-globbed, matches at any depth) keeps this in sync with /files.
+  const result = await runGit(['status', '--porcelain', '-uall', '--', '*.p.json'], root);
+  if (result.code !== 0) {
+    sendJson(res, 500, { error: result.stderr.trim() || 'git status failed' });
+    return;
+  }
+  sendJson(res, 200, { changes: parseStatusPorcelain(result.stdout) });
+}
+
 export function gitApiPlugin(): Plugin {
   return {
     name: 'process-viewer-git-api',
@@ -214,6 +270,9 @@ export function gitApiPlugin(): Plugin {
                 return;
               case '/status':
                 await handleStatus(res as ServerResponse, root, file);
+                return;
+              case '/changes':
+                await handleChanges(res as ServerResponse, root);
                 return;
               default:
                 next();

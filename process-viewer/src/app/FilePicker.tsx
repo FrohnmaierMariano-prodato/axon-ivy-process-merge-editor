@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ChangeStatus } from '../git/gitProvider';
 
 function basename(p: string): string {
   return p.split('/').pop() ?? p;
@@ -64,12 +65,24 @@ export interface FilePickerProps {
   files: string[];
   value: string;
   onChange: (file: string) => void;
+  /** Repo-relative paths with local changes, used to highlight files and folders. */
+  changed?: Map<string, ChangeStatus>;
 }
 
 const MAX_RESULTS = 200;
 
+function ChangeDot({ status }: { status: ChangeStatus }) {
+  return (
+    <span
+      className={`file-picker__change-dot file-picker__change-dot--${status}`}
+      title={`${status} locally`}
+      aria-hidden
+    />
+  );
+}
+
 /** Searchable file picker: a collapsible folder tree while browsing, flat substring search while typing. */
-export function FilePicker({ files, value, onChange }: FilePickerProps) {
+export function FilePicker({ files, value, onChange, changed }: FilePickerProps) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -77,6 +90,18 @@ export function FilePicker({ files, value, onChange }: FilePickerProps) {
   const rootRef = useRef<HTMLDivElement>(null);
 
   const tree = useMemo(() => buildTree(files), [files]);
+
+  // Number of changed files under each folder path, for the folder badges.
+  const folderChangeCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    if (!changed) return counts;
+    for (const path of changed.keys()) {
+      for (const folder of ancestorFolders(path)) {
+        counts.set(folder, (counts.get(folder) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [changed]);
 
   const searching = query.trim().length > 0;
 
@@ -145,12 +170,17 @@ export function FilePicker({ files, value, onChange }: FilePickerProps) {
     node.children.map(child => {
       const indent = { paddingLeft: 8 + depth * 14 };
       if (child.isFile) {
+        const status = changed?.get(child.fullPath);
         return (
           <li
             key={child.fullPath}
             role="option"
             aria-selected={child.fullPath === value}
-            className={'file-picker__row file-picker__file' + (child.fullPath === value ? ' file-picker__file--current' : '')}
+            className={
+              'file-picker__row file-picker__file' +
+              (child.fullPath === value ? ' file-picker__file--current' : '') +
+              (status ? ' file-picker__file--changed' : '')
+            }
             style={indent}
             title={child.fullPath}
             onPointerDown={e => {
@@ -160,14 +190,16 @@ export function FilePicker({ files, value, onChange }: FilePickerProps) {
           >
             <span className="file-picker__icon">📄</span>
             <span className="file-picker__name">{child.name}</span>
+            {status && <ChangeDot status={status} />}
           </li>
         );
       }
       const isOpen = expanded.has(child.fullPath);
+      const changeCount = folderChangeCounts.get(child.fullPath) ?? 0;
       return (
         <li key={child.fullPath} className="file-picker__group">
           <div
-            className="file-picker__row file-picker__folder"
+            className={'file-picker__row file-picker__folder' + (changeCount ? ' file-picker__folder--changed' : '')}
             style={indent}
             onPointerDown={e => {
               e.preventDefault();
@@ -176,6 +208,11 @@ export function FilePicker({ files, value, onChange }: FilePickerProps) {
           >
             <span className="file-picker__icon">{isOpen ? '▾' : '▸'}</span>
             <span className="file-picker__folder-name">{child.name}</span>
+            {changeCount > 0 && (
+              <span className="file-picker__badge" title={`${changeCount} changed file${changeCount === 1 ? '' : 's'}`}>
+                {changeCount}
+              </span>
+            )}
           </div>
           {isOpen && <ul className="file-picker__sublist">{renderTree(child, depth + 1)}</ul>}
         </li>
@@ -221,7 +258,10 @@ export function FilePicker({ files, value, onChange }: FilePickerProps) {
                     select(f);
                   }}
                 >
-                  <span className="file-picker__name">{basename(f)}</span>
+                  <span className="file-picker__name">
+                    {basename(f)}
+                    {changed?.get(f) && <ChangeDot status={changed.get(f)!} />}
+                  </span>
                   <span className="file-picker__dir">{dirname(f)}</span>
                 </li>
               ))}

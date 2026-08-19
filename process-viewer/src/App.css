@@ -230,6 +230,51 @@
   outline: 1px solid #bfdbfe;
 }
 
+.file-picker__folder--changed .file-picker__folder-name,
+.file-picker__file--changed .file-picker__name {
+  color: #b45309;
+}
+
+.file-picker__badge {
+  flex: none;
+  margin-left: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #f59e0b;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+.file-picker__change-dot {
+  flex: none;
+  margin-left: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+}
+
+.file-picker__change-dot--added {
+  background: #16a34a;
+}
+
+.file-picker__change-dot--deleted {
+  background: #dc2626;
+}
+
+.file-picker__change-dot--untracked {
+  background: #2563eb;
+}
+
+.file-picker__change-dot--renamed {
+  background: #7c3aed;
+}
+
 .breadcrumb {
   display: flex;
   align-items: center;
