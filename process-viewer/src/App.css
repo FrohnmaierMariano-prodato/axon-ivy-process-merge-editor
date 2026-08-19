@@ -406,6 +406,39 @@
   font-size: 14px;
 }
 
+.detail-jump-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 10px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.detail-jump-button:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.detail-jump-button__kbd {
+  margin-left: 2px;
+  padding: 0 5px;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  color: #1e40af;
+  background: #ffffff;
+  border: 1px solid #bfdbfe;
+  border-radius: 4px;
+}
+
 .detail-diff-summary {
   display: flex;
   flex-wrap: wrap;
