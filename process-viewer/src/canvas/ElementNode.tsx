@@ -13,9 +13,9 @@ export interface ElementNodeData extends Record<string, unknown> {
   status: DiffStatus;
 }
 
-function elementLabel(element: ProcessElement): string {
-  if (Array.isArray(element.name)) return element.name.join(' / ');
-  return element.name || element.type;
+function elementLabelLines(element: ProcessElement): string[] {
+  if (Array.isArray(element.name)) return element.name.map(line => line.trim());
+  return [element.name || element.type];
 }
 
 function Shape({ category, width, height, style }: { category: ElementCategory; width: number; height: number; style: ReturnType<typeof getStyle> }) {
@@ -65,10 +65,17 @@ export function ElementNode({ data }: NodeProps & { data: ElementNodeData }) {
   const category = classifyElementType(element.type);
   const size = element.visual?.size ?? DEFAULT_SIZE[category];
   const style = getStyle(status);
-  const label = elementLabel(element);
+  const labelLines = elementLabelLines(element);
+  const labelContent = labelLines.map((line, i) => (
+    <span key={i} className="element-node__label-line">
+      {line}
+    </span>
+  ));
   const isEventLike = category === 'start' || category === 'end' || category === 'intermediate' || category === 'boundary';
   const badgeColor = category === 'activity' ? activityBadgeColor(element.type) : undefined;
   const showExpandMarker = hasExpandMarker(element.type);
+  const labelOffset = element.visual?.labelOffset;
+  const externalLabel = category !== 'container' && (isEventLike || category === 'gateway');
 
   return (
     <div className={`element-node element-node--${category}`} style={{ width: size.width, height: size.height }} title={`${element.type} (${element.id})`}>
@@ -90,11 +97,18 @@ export function ElementNode({ data }: NodeProps & { data: ElementNodeData }) {
         </div>
       )}
       {category === 'container' ? (
-        <div className="element-node__container-label">{label}</div>
-      ) : isEventLike || category === 'gateway' ? (
-        <div className="element-node__label element-node__label--below">{label}</div>
+        <div className="element-node__container-label">{labelContent}</div>
+      ) : externalLabel && labelOffset ? (
+        <div
+          className="element-node__label element-node__label--offset"
+          style={{ left: size.width / 2 + labelOffset.x, top: size.height / 2 + labelOffset.y }}
+        >
+          {labelContent}
+        </div>
+      ) : externalLabel ? (
+        <div className="element-node__label element-node__label--below">{labelContent}</div>
       ) : (
-        <div className="element-node__label">{label}</div>
+        <div className="element-node__label">{labelContent}</div>
       )}
     </div>
   );

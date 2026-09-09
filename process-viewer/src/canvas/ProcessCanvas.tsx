@@ -7,6 +7,7 @@ import { layoutProcess } from './layout';
 import { ElementNode } from './ElementNode';
 import { ConnectorEdge } from './ConnectorEdge';
 import { LaneNode } from './LaneNode';
+import { EdgeMarkerDefs } from './EdgeMarkerDefs';
 
 const nodeTypes: NodeTypes = { processElement: ElementNode, lane: LaneNode };
 const edgeTypes: EdgeTypes = { connector: ConnectorEdge };
@@ -26,6 +27,7 @@ export function ProcessCanvas({ document, diff, onSelectElement }: ProcessCanvas
 
   return (
     <ReactFlowProvider>
+      <EdgeMarkerDefs />
       <ReactFlow
         nodes={nodes}
         edges={edges}

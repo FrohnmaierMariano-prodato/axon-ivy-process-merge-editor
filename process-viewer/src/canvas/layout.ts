@@ -6,6 +6,7 @@ import type { ProcessDiffResult } from '../diff/types';
 import type { ElementNodeData } from './ElementNode';
 import type { ConnectorEdgeData } from './ConnectorEdge';
 import type { LaneNodeData } from './LaneNode';
+import { arrowMarkerId } from './statusColors';
 
 export interface LayoutResult {
   nodes: Node<ElementNodeData | LaneNodeData>[];
@@ -371,6 +372,8 @@ const edges: Edge<ConnectorEdgeData>[] = [];
         source: ownerId,
         target: connector.to,
         type: 'connector',
+        // Plain marker id - React Flow itself wraps this in `url(#...)` before passing it down.
+        markerEnd: arrowMarkerId(connectorStatus),
         data: { points, label: labelText(connector.label?.name), labelPoint: labelPoint(points, connector.label), status: connectorStatus }
       });
     }

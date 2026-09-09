@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ProcessCanvas } from '../canvas/ProcessCanvas';
 import { DetailPanel } from './DetailPanel';
 import { flattenElements } from '../model/parseProcess';
@@ -7,6 +7,7 @@ import { childDocument, getElementReference, getJumpInfo } from '../model/jumpTa
 import { hasHiddenChildren } from '../icons/activityBadge';
 import { useSidebarWidth } from './useSidebarWidth';
 import { useCanvasOrientation } from './useCanvasOrientation';
+import { useSplitRatio } from './useSplitRatio';
 import type { ProcessDocument, ProcessElement } from '../model/schema-types';
 
 /** One level of the navigation stack: the two documents being diffed plus their pane/breadcrumb labels. */
@@ -53,6 +54,8 @@ export function DualProcessDiff({ left, right, leftLabel, rightLabel, rootLabel,
   const [note, setNote] = useState<string>();
   const { width: sidebarWidth, isDragging, onHandlePointerDown } = useSidebarWidth();
   const { orientation, toggleOrientation } = useCanvasOrientation();
+  const splitContainerRef = useRef<HTMLDivElement>(null);
+  const { ratio: splitRatio, isDragging: isSplitDragging, onHandlePointerDown: onSplitPointerDown } = useSplitRatio(splitContainerRef, orientation);
 
   const baseFrame = useMemo<DiffFrame>(
     () => ({ left, right, leftLabel, rightLabel, crumb: rootLabel ?? 'Process' }),
@@ -171,11 +174,21 @@ export function DualProcessDiff({ left, right, leftLabel, rightLabel, rootLabel,
         </div>
       )}
       <div className="view__body">
-        <div className={`view__canvas view__canvas--split${orientation === 'vertical' ? ' view__canvas--split-vertical' : ''}`}>
-          <div className="split-pane">
+        <div
+          ref={splitContainerRef}
+          className={`view__canvas view__canvas--split${orientation === 'vertical' ? ' view__canvas--split-vertical' : ''}`}
+        >
+          <div className="split-pane" style={{ flex: `0 0 ${splitRatio * 100}%` }}>
             <div className="split-pane__label">{current.leftLabel}</div>
             {current.left && <ProcessCanvas key={`l${frames.length}`} document={current.left} diff={diff} onSelectElement={setSelectedId} />}
           </div>
+          <div
+            className={`split-divider${isSplitDragging ? ' split-divider--active' : ''}`}
+            onPointerDown={onSplitPointerDown}
+            role="separator"
+            aria-orientation={orientation === 'vertical' ? 'horizontal' : 'vertical'}
+            aria-label="Resize diff panes"
+          />
           <div className="split-pane">
             <div className="split-pane__label">{current.rightLabel}</div>
             {current.right && <ProcessCanvas key={`r${frames.length}`} document={current.right} diff={diff} onSelectElement={setSelectedId} />}

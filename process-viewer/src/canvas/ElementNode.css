@@ -87,6 +87,19 @@
   margin-top: 2px;
 }
 
+.element-node__label--offset {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: max-content;
+  max-width: 160px;
+  padding: 0;
+  text-align: center;
+}
+
+.element-node__label-line {
+  display: block;
+}
+
 .element-node__container-label {
   position: absolute;
   top: 4px;
