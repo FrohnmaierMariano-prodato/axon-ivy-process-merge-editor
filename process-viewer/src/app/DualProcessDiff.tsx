@@ -180,7 +180,14 @@ export function DualProcessDiff({ left, right, leftLabel, rightLabel, rootLabel,
         >
           <div className="split-pane" style={{ flex: `0 0 ${splitRatio * 100}%` }}>
             <div className="split-pane__label">{current.leftLabel}</div>
-            {current.left && <ProcessCanvas key={`l${frames.length}`} document={current.left} diff={diff} onSelectElement={setSelectedId} />}
+            {current.left && (
+              <ProcessCanvas
+                key={`l:${frames.length}:${current.leftLabel}:${current.left.id}`}
+                document={current.left}
+                diff={diff}
+                onSelectElement={setSelectedId}
+              />
+            )}
           </div>
           <div
             className={`split-divider${isSplitDragging ? ' split-divider--active' : ''}`}
@@ -191,7 +198,14 @@ export function DualProcessDiff({ left, right, leftLabel, rightLabel, rootLabel,
           />
           <div className="split-pane">
             <div className="split-pane__label">{current.rightLabel}</div>
-            {current.right && <ProcessCanvas key={`r${frames.length}`} document={current.right} diff={diff} onSelectElement={setSelectedId} />}
+            {current.right && (
+              <ProcessCanvas
+                key={`r:${frames.length}:${current.rightLabel}:${current.right.id}`}
+                document={current.right}
+                diff={diff}
+                onSelectElement={setSelectedId}
+              />
+            )}
           </div>
         </div>
         <div
