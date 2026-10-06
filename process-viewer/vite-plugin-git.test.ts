@@ -42,6 +42,12 @@ describe('parseStatusPorcelain', () => {
     ]);
   });
 
+  it('classifies an unmerged file as conflicted', () => {
+    expect(parseStatusPorcelain('UU sub/Conflicted.p.json\n')).toEqual([
+      { path: 'sub/Conflicted.p.json', status: 'conflicted' }
+    ]);
+  });
+
   it('uses the destination path for renames', () => {
     const stdout = 'R  old/Old.p.json -> new/New.p.json\n';
     expect(parseStatusPorcelain(stdout)).toEqual([{ path: 'new/New.p.json', status: 'renamed' }]);

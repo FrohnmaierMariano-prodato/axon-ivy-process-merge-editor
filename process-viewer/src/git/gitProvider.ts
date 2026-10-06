@@ -13,9 +13,11 @@ export interface GitCommit {
 
 /** A special ref meaning "the current working-tree contents on disk". */
 export const WORKING_TREE = 'WORKING' as const;
+export const CONFLICT_OURS = 'CONFLICT_OURS' as const;
+export const CONFLICT_THEIRS = 'CONFLICT_THEIRS' as const;
 export type GitRef = typeof WORKING_TREE | string;
 
-export type ChangeStatus = 'modified' | 'added' | 'deleted' | 'untracked' | 'renamed';
+export type ChangeStatus = 'modified' | 'added' | 'deleted' | 'untracked' | 'renamed' | 'conflicted';
 
 export interface ChangedFile {
   path: string;
@@ -70,8 +72,11 @@ export class HttpGitProvider implements GitProvider {
   }
 
   async readAtRef(file: string, ref: GitRef): Promise<string | null> {
-    const url =
-      ref === WORKING_TREE ? this.url('/working', { file }) : this.url('/show', { ref, file });
+    let url: string;
+    if (ref === WORKING_TREE) url = this.url('/working', { file });
+    else if (ref === CONFLICT_OURS) url = this.url('/stage', { stage: '2', file });
+    else if (ref === CONFLICT_THEIRS) url = this.url('/stage', { stage: '3', file });
+    else url = this.url('/show', { ref, file });
     const { content } = await getJson<{ content: string | null }>(url);
     return content;
   }

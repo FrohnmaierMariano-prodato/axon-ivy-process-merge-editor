@@ -67,7 +67,7 @@ export function safeRelativePath(root: string, file: string): string | undefined
   return rel.split(path.sep).join('/');
 }
 
-export type ChangeStatus = 'modified' | 'added' | 'deleted' | 'untracked' | 'renamed';
+export type ChangeStatus = 'modified' | 'added' | 'deleted' | 'untracked' | 'renamed' | 'conflicted';
 
 export interface ChangedFile {
   path: string;
@@ -88,6 +88,7 @@ function unquotePath(p: string): string {
 }
 
 function classifyStatus(code: string): ChangeStatus {
+  if (code === 'UU') return 'conflicted';
   if (code.includes('?')) return 'untracked';
   if (code.includes('R')) return 'renamed';
   if (code.includes('D')) return 'deleted';
@@ -186,6 +187,24 @@ async function handleShow(res: ServerResponse, root: string, ref: string, file: 
   sendJson(res, 200, { content: result.stdout });
 }
 
+async function handleStage(res: ServerResponse, root: string, stage: string, file: string): Promise<void> {
+  const rel = safeRelativePath(root, file);
+  if (!rel) {
+    sendJson(res, 400, { error: 'Invalid or disallowed file path' });
+    return;
+  }
+  if (stage !== '2' && stage !== '3') {
+    sendJson(res, 400, { error: 'Invalid conflict stage' });
+    return;
+  }
+  const result = await runGit(['show', `:${stage}:${rel}`], root);
+  if (result.code !== 0) {
+    sendJson(res, 404, { error: result.stderr.trim() || `Conflict stage ${stage} is not available` });
+    return;
+  }
+  sendJson(res, 200, { content: result.stdout });
+}
+
 async function handleWorking(res: ServerResponse, root: string, file: string): Promise<void> {
   const rel = safeRelativePath(root, file);
   if (!rel) {
@@ -264,6 +283,9 @@ export function gitApiPlugin(): Plugin {
                 return;
               case '/show':
                 await handleShow(res as ServerResponse, root, query.get('ref') ?? '', file);
+                return;
+              case '/stage':
+                await handleStage(res as ServerResponse, root, query.get('stage') ?? '', file);
                 return;
               case '/working':
                 await handleWorking(res as ServerResponse, root, file);

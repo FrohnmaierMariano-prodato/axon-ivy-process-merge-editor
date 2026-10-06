@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { HttpGitProvider, WORKING_TREE } from './gitProvider';
+import { CONFLICT_OURS, CONFLICT_THEIRS, HttpGitProvider, WORKING_TREE } from './gitProvider';
 
 function mockFetch(response: unknown, ok = true, status = 200): void {
   vi.stubGlobal(
@@ -48,6 +48,19 @@ describe('HttpGitProvider', () => {
     await provider.readAtRef('Main.p.json', 'HEAD');
     const url = fetchMock.mock.calls[0][0];
     expect(url).toContain('/show?ref=HEAD');
+    expect(url).toContain('file=Main.p.json');
+  });
+
+  it.each([
+    [CONFLICT_OURS, '2'],
+    [CONFLICT_THEIRS, '3']
+  ])('reads %s from conflict stage %s', async (ref, stage) => {
+    const fetchMock = vi.fn((_url: string) => Promise.resolve({ ok: true, status: 200, json: async () => ({ content: '{}' }) } as unknown as Response));
+    vi.stubGlobal('fetch', fetchMock);
+    const provider = new HttpGitProvider();
+    await provider.readAtRef('Main.p.json', ref);
+    const url = fetchMock.mock.calls[0][0];
+    expect(url).toContain(`/stage?stage=${stage}`);
     expect(url).toContain('file=Main.p.json');
   });
 

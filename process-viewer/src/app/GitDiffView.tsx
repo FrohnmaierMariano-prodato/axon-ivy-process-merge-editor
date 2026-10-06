@@ -1,15 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DualProcessDiff, type JumpResult } from './DualProcessDiff';
 import { FilePicker } from './FilePicker';
+import { adjacentFile } from './fileNavigation';
 import { parseProcessText, ProcessParseError } from '../model/parseProcess';
 import { resolveProcessPath } from '../model/processRegistry';
-import { HttpGitProvider, WORKING_TREE, type ChangeStatus, type GitCommit, type GitRef } from '../git/gitProvider';
+import {
+  CONFLICT_OURS,
+  CONFLICT_THEIRS,
+  HttpGitProvider,
+  WORKING_TREE,
+  type ChangeStatus,
+  type GitCommit,
+  type GitRef
+} from '../git/gitProvider';
 import type { ProcessDocument } from '../model/schema-types';
 
 const HEAD_REF = 'HEAD';
 
 function refLabel(ref: GitRef, commits: GitCommit[]): string {
   if (ref === WORKING_TREE) return 'Working tree (uncommitted)';
+  if (ref === CONFLICT_OURS) return 'Ours (local before merge)';
+  if (ref === CONFLICT_THEIRS) return 'Theirs (incoming)';
   if (ref === HEAD_REF) return 'HEAD (latest commit)';
   const commit = commits.find(c => c.hash === ref);
   return commit ? `${commit.shortHash} — ${commit.subject}` : ref;
@@ -45,6 +56,18 @@ export function GitDiffView() {
   const [errors, setErrors] = useState<Partial<Record<'base' | 'target' | 'general', string>>>({});
   const [notes, setNotes] = useState<Partial<Record<'base' | 'target', string>>>({});
   const [loading, setLoading] = useState(false);
+  const isConflicted = changed.get(file) === 'conflicted';
+
+  const selectFile = useCallback((nextFile: string) => {
+    setFile(nextFile);
+    if (changed.get(nextFile) === 'conflicted') {
+      setBaseRef(CONFLICT_OURS);
+      setTargetRef(CONFLICT_THEIRS);
+    } else {
+      setBaseRef(current => current === CONFLICT_OURS || current === CONFLICT_THEIRS ? HEAD_REF : current);
+      setTargetRef(current => current === CONFLICT_OURS || current === CONFLICT_THEIRS ? WORKING_TREE : current);
+    }
+  }, [changed]);
 
   // Load the list of tracked process files once.
   useEffect(() => {
@@ -65,12 +88,36 @@ export function GitDiffView() {
       .catch(() => setChanged(new Map()));
   }, [provider]);
 
+  useEffect(() => {
+    if (isConflicted) {
+      setBaseRef(CONFLICT_OURS);
+      setTargetRef(CONFLICT_THEIRS);
+    } else {
+      setBaseRef(current => current === CONFLICT_OURS || current === CONFLICT_THEIRS ? HEAD_REF : current);
+      setTargetRef(current => current === CONFLICT_OURS || current === CONFLICT_THEIRS ? WORKING_TREE : current);
+    }
+  }, [file, isConflicted]);
+
   // Untracked *.p.json aren't returned by listFiles; surface them in the picker too.
   const pickerFiles = useMemo(() => {
     const set = new Set(files);
     for (const path of changed.keys()) set.add(path);
     return [...set];
   }, [files, changed]);
+  const changedFiles = useMemo(
+    () => pickerFiles.filter(path => changed.has(path)),
+    [pickerFiles, changed]
+  );
+  const conflictedFiles = useMemo(
+    () => pickerFiles.filter(path => changed.get(path) === 'conflicted'),
+    [pickerFiles, changed]
+  );
+  const changeIndex = changedFiles.indexOf(file);
+  const conflictIndex = conflictedFiles.indexOf(file);
+  const previousChange = adjacentFile(changedFiles, file, -1);
+  const nextChange = adjacentFile(changedFiles, file, 1);
+  const previousConflict = adjacentFile(conflictedFiles, file, -1);
+  const nextConflict = adjacentFile(conflictedFiles, file, 1);
 
   // Refresh commit history whenever the selected file changes.
   useEffect(() => {
@@ -88,15 +135,17 @@ export function GitDiffView() {
   }, [file, provider]);
 
   const loadSide = useCallback(
-    async (ref: GitRef, side: 'base' | 'target') => {
+    async (ref: GitRef, side: 'base' | 'target', isCurrent: () => boolean) => {
       try {
         const text = await provider.readAtRef(file, ref);
         const parsed = text === null ? EMPTY_DOCUMENT : parseProcessText(text);
+        if (!isCurrent()) return;
         if (side === 'base') setLeft(parsed);
         else setRight(parsed);
         setErrors(prev => ({ ...prev, [side]: undefined }));
         setNotes(prev => ({ ...prev, [side]: text === null ? 'file not present at this version' : undefined }));
       } catch (e) {
+        if (!isCurrent()) return;
         const message = e instanceof ProcessParseError ? e.message : (e as Error).message;
         if (side === 'base') setLeft(undefined);
         else setRight(undefined);
@@ -116,7 +165,8 @@ export function GitDiffView() {
     }
     let cancelled = false;
     setLoading(true);
-    Promise.all([loadSide(baseRef, 'base'), loadSide(targetRef, 'target')]).finally(() => {
+    const isCurrent = () => !cancelled;
+    Promise.all([loadSide(baseRef, 'base', isCurrent), loadSide(targetRef, 'target', isCurrent)]).finally(() => {
       if (!cancelled) setLoading(false);
     });
     return () => {
@@ -124,8 +174,23 @@ export function GitDiffView() {
     };
   }, [file, baseRef, targetRef, loadSide]);
 
-  const baseOptions = useMemo<GitRef[]>(() => [HEAD_REF, ...commits.map(c => c.hash)], [commits]);
-  const targetOptions = useMemo<GitRef[]>(() => [WORKING_TREE, HEAD_REF, ...commits.map(c => c.hash)], [commits]);
+  const baseOptions = useMemo<GitRef[]>(
+    () => [
+      ...(isConflicted ? [CONFLICT_OURS, CONFLICT_THEIRS] : []),
+      HEAD_REF,
+      ...commits.map(c => c.hash)
+    ],
+    [commits, isConflicted]
+  );
+  const targetOptions = useMemo<GitRef[]>(
+    () => [
+      ...(isConflicted ? [CONFLICT_THEIRS, CONFLICT_OURS] : []),
+      WORKING_TREE,
+      HEAD_REF,
+      ...commits.map(c => c.hash)
+    ],
+    [commits, isConflicted]
+  );
 
   // Switch to a different local repo entered manually; reset the file so it picks a valid one.
   const applyRepo = () => {
@@ -185,8 +250,54 @@ export function GitDiffView() {
       </label>
       <label className="git-control">
         <span>File</span>
-        <FilePicker files={pickerFiles} value={file} onChange={setFile} changed={changed} />
+        <FilePicker files={pickerFiles} value={file} onChange={selectFile} changed={changed} />
       </label>
+      <div className="file-nav" aria-label="Changed file navigation">
+        <button
+          type="button"
+          className="file-nav__button"
+          disabled={!previousChange}
+          onClick={() => previousChange && selectFile(previousChange)}
+          title={previousChange ? `Previous change: ${basename(previousChange)}` : 'No changed files'}
+        >
+          <span aria-hidden>‹</span> Prev change
+        </button>
+        <span className="file-nav__count" aria-live="polite">
+          {changeIndex + 1} / {changedFiles.length}
+        </span>
+        <button
+          type="button"
+          className="file-nav__button"
+          disabled={!nextChange}
+          onClick={() => nextChange && selectFile(nextChange)}
+          title={nextChange ? `Next change: ${basename(nextChange)}` : 'No changed files'}
+        >
+          Next change <span aria-hidden>›</span>
+        </button>
+      </div>
+      {conflictedFiles.length > 0 && (
+        <div className="file-nav" aria-label="Merge conflict navigation">
+          <button
+            type="button"
+            className="file-nav__button file-nav__button--conflict"
+            onClick={() => previousConflict && selectFile(previousConflict)}
+            title={`Previous conflict: ${basename(previousConflict ?? '')}`}
+          >
+            <span aria-hidden>‹</span> Prev conflict
+          </button>
+          <span className="file-nav__count file-nav__count--conflict" aria-live="polite">
+            {conflictIndex + 1} / {conflictedFiles.length}
+          </span>
+          <button
+            type="button"
+            className="file-nav__button file-nav__button--conflict"
+            onClick={() => nextConflict && selectFile(nextConflict)}
+            title={`Next conflict: ${basename(nextConflict ?? '')}`}
+          >
+            Next conflict <span aria-hidden>›</span>
+          </button>
+        </div>
+      )}
       <label className="git-control">
         <span>Base</span>
         <select value={baseRef} onChange={e => setBaseRef(e.target.value)}>
